@@ -64,38 +64,6 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .lede{color:var(--ink2);font-size:14px;margin-top:4px}
 .dk .lede{color:var(--on2)}
 
-/* Coach chat */
-function coachContext(){
-  const w=weekOf(TODAY), z=ZONES(), since=addD(TODAY,-14);
-  const runs=Object.values(S.runs).filter(r=>r.date>=since).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>r.date+" "+(r.title||r.type)+": "+(isRun(r)?(+r.km).toFixed(1)+"km "+fP(r.sec/r.km)+"/km":fDur(r.sec))+(r.avgHr?" HR "+Math.round(r.avgHr):"")).join("\n")||"none";
-  const logs=Object.values(S.log).filter(l=>l.date>=since).sort((a,b)=>a.date.localeCompare(b.date)).map(l=>l.date+": "+[l.done?"done":"",l.rpe?"RPE "+l.rpe:"",l.foot!=null?"foot "+l.foot+"/10":"",(l.niggles||[]).map(n=>n.area+" "+n.side+" "+n.score+"/10").join(", "),l.shoe||"",l.heatMin?l.heatType+" "+l.heatMin+"min":"",l.note||""].filter(Boolean).join(" | ")).join("\n")||"none";
-  const plan=w?(w.days||[]).map(d=>d.date+" "+d.dow+": "+d.title+(d.km?" "+d.km+"km":"")).join("\n"):"no plan week";
-  const nxt=weekList().find(x=>w&&x.n===w.n+1);
-  return "ATHLETE: James, Melbourne, 180cm ~89kg. Marathon PBs 3:13 (Melbourne 11 Oct 2026, foot pain from 2km, cramps from 25km), 3:14:50 Sydney. 5km 17:48. Goal Ballarat Marathon 18 Apr 2027, target "+S.settings.goalMarathon+". Limiter: aerobic endurance at pace (HR decoupling 7 to 10% in marathons). Real past volume 60 to 70km/week.\n"+
-   "FOOT: left forefoot injured end of a 24km on 2 Oct in Saucony Endorphin Elite 3 (Bali heat). MRI clear, but swelling and bruising top and sole, centred on the big toe joint. Advised to see a doctor this week: midfoot ligament, sesamoid and gout to rule out. No running until cleared. Elite 3 parked, Elite 2 preferred.\n"+
-   "WEIGHT: target "+(S.settings.weightGoal||87)+"kg by race. Recent: "+(Object.values(S.log).filter(l=>l.weight).sort((a,b)=>a.date.localeCompare(b.date)).slice(-7).map(l=>l.date.slice(5)+" "+l.weight).join(", ")||"none logged")+". Aim 0.25 to 0.5kg/week loss, never under-fuel key sessions or long runs.\n"+"SETTINGS: VDOT "+S.settings.vdot+", LTHR "+(S.settings.lthr||"?")+", max HR "+(S.settings.maxHr||"?")+". Zones: "+z.map(x=>x.n+" "+x.txt+(x.hr?" ("+x.hr+")":"")).join("; ")+".\n"+
-   "THIS WEEK ("+(w?"W"+w.n+" "+w.phase:"")+"):\n"+plan+(nxt?"\nNEXT WEEK W"+nxt.n+": "+nxt.focus:"")+(()=>{const a=pmc(30);const n=a[a.length-1];return n?"\nLOAD: fitness CTL "+Math.round(n.ctl)+", fatigue ATL "+Math.round(n.atl)+", form TSB "+Math.round(n.tsb):"";})()+"\nLAST 14 DAYS RUNS:\n"+runs+"\nLAST 14 DAYS LOGS:\n"+logs+"\nLATEST COACH NOTE: "+((S.notes[0]||{}).title||"")+". TODAY: "+TODAY+".";
-}
-async function sendChat(text){
-  if(!text)return; if(!S.db){toast("Chat is unavailable right now");return;}
-  const ts=new Date(); const stamp=iso(ts)+"T"+p2(ts.getHours())+":"+p2(ts.getMinutes())+":"+p2(ts.getSeconds());
-  const id=stamp.replace(/[^0-9]/g,"")+"-u";
-  const st=$("#chatState"); const inp=$("#chatIn"); if(inp)inp.value="";
-  try{await S.db.collection("chat").doc(id).set({ts:stamp,role:"user",text,via:"dashboard",handled:false});}catch(e){toast("Couldn't send. Try again.");return;}
-  const sample=async(turns)=>{const {data,error}=await SB.functions.invoke("coach",{body:{turns}});if(error){let code="error";try{const b=await error.context.json();code=b.code||code;}catch(_){}throw {code};}return {text:data.text};};
-  if(st)st.textContent="Coach is thinking";
-  const turns=S.chat.slice(-12).map(m=>({role:m.role==="user"?"user":"assistant",content:m.text}));
-  if(!turns.length||turns[turns.length-1].content!==text)turns.push({role:"user",content:text});
-  while(turns.length&&turns[0].role!=="user")turns.shift();
-  const brief="You are James's running coach, texting him like a good human coach would: direct, warm, specific, Australian English, short (2 to 6 sentences unless he asks for detail). Never use em dashes or en dashes. Ground every answer in the data below and in sports science. Be conservative with injury: never clear him to run on the foot; send red flags (heat, spreading redness, fever, cannot bear weight) to same-day medical care. If his message implies a plan change (missed sessions, illness, niggle, travel, schedule), say what you would change and end with a line starting PLAN CHANGE: summarising it, so it can be built into the plan. Ask at most one question.\n\n"+coachContext()+"\n\nConversation follows. Reply to his latest message.";
-  turns[0]={role:"user",content:brief+"\n\nJames: "+turns[0].content};
-  try{const {text:reply}=await sample(turns,{cache:false});
-    const t2=new Date(); const s2=iso(t2)+"T"+p2(t2.getHours())+":"+p2(t2.getMinutes())+":"+p2(t2.getSeconds());
-    await S.db.collection("chat").doc(s2.replace(/[^0-9]/g,"")+"-c").set({ts:s2,role:"coach",text:reply,via:"dashboard",planChange:/PLAN CHANGE:/i.test(reply),handled:!/PLAN CHANGE:/i.test(reply)});
-    if(st)st.textContent="";
-  }catch(e){if(st)st.textContent=e&&e.code==="no_key"?"Coach needs the API key added in Supabase. Your message is saved.":"No reply this time. Your message is saved for the next sync.";}
-}
-
 /* Shell */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .top-in{max-width:1080px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
@@ -795,6 +763,38 @@ function loadRead(all,now,dC){
   else if(now.tsb>5&&now.tsb<25)r.push("You're fresh. This is where you race well.");
   r.push("For a 2:55 build, aim for fitness in the 70s by late March, peaking near form plus 10 on race day.");
   return r.join(" ");
+}
+
+/* Coach chat */
+function coachContext(){
+  const w=weekOf(TODAY), z=ZONES(), since=addD(TODAY,-14);
+  const runs=Object.values(S.runs).filter(r=>r.date>=since).sort((a,b)=>a.date.localeCompare(b.date)).map(r=>r.date+" "+(r.title||r.type)+": "+(isRun(r)?(+r.km).toFixed(1)+"km "+fP(r.sec/r.km)+"/km":fDur(r.sec))+(r.avgHr?" HR "+Math.round(r.avgHr):"")).join("\n")||"none";
+  const logs=Object.values(S.log).filter(l=>l.date>=since).sort((a,b)=>a.date.localeCompare(b.date)).map(l=>l.date+": "+[l.done?"done":"",l.rpe?"RPE "+l.rpe:"",l.foot!=null?"foot "+l.foot+"/10":"",(l.niggles||[]).map(n=>n.area+" "+n.side+" "+n.score+"/10").join(", "),l.shoe||"",l.heatMin?l.heatType+" "+l.heatMin+"min":"",l.note||""].filter(Boolean).join(" | ")).join("\n")||"none";
+  const plan=w?(w.days||[]).map(d=>d.date+" "+d.dow+": "+d.title+(d.km?" "+d.km+"km":"")).join("\n"):"no plan week";
+  const nxt=weekList().find(x=>w&&x.n===w.n+1);
+  return "ATHLETE: James, Melbourne, 180cm ~89kg. Marathon PBs 3:13 (Melbourne 11 Oct 2026, foot pain from 2km, cramps from 25km), 3:14:50 Sydney. 5km 17:48. Goal Ballarat Marathon 18 Apr 2027, target "+S.settings.goalMarathon+". Limiter: aerobic endurance at pace (HR decoupling 7 to 10% in marathons). Real past volume 60 to 70km/week.\n"+
+   "FOOT: left forefoot injured end of a 24km on 2 Oct in Saucony Endorphin Elite 3 (Bali heat). MRI clear, but swelling and bruising top and sole, centred on the big toe joint. Advised to see a doctor this week: midfoot ligament, sesamoid and gout to rule out. No running until cleared. Elite 3 parked, Elite 2 preferred.\n"+
+   "WEIGHT: target "+(S.settings.weightGoal||87)+"kg by race. Recent: "+(Object.values(S.log).filter(l=>l.weight).sort((a,b)=>a.date.localeCompare(b.date)).slice(-7).map(l=>l.date.slice(5)+" "+l.weight).join(", ")||"none logged")+". Aim 0.25 to 0.5kg/week loss, never under-fuel key sessions or long runs.\n"+"SETTINGS: VDOT "+S.settings.vdot+", LTHR "+(S.settings.lthr||"?")+", max HR "+(S.settings.maxHr||"?")+". Zones: "+z.map(x=>x.n+" "+x.txt+(x.hr?" ("+x.hr+")":"")).join("; ")+".\n"+
+   "THIS WEEK ("+(w?"W"+w.n+" "+w.phase:"")+"):\n"+plan+(nxt?"\nNEXT WEEK W"+nxt.n+": "+nxt.focus:"")+(()=>{const a=pmc(30);const n=a[a.length-1];return n?"\nLOAD: fitness CTL "+Math.round(n.ctl)+", fatigue ATL "+Math.round(n.atl)+", form TSB "+Math.round(n.tsb):"";})()+"\nLAST 14 DAYS RUNS:\n"+runs+"\nLAST 14 DAYS LOGS:\n"+logs+"\nLATEST COACH NOTE: "+((S.notes[0]||{}).title||"")+". TODAY: "+TODAY+".";
+}
+async function sendChat(text){
+  if(!text)return; if(!S.db){toast("Chat is unavailable right now");return;}
+  const ts=new Date(); const stamp=iso(ts)+"T"+p2(ts.getHours())+":"+p2(ts.getMinutes())+":"+p2(ts.getSeconds());
+  const id=stamp.replace(/[^0-9]/g,"")+"-u";
+  const st=$("#chatState"); const inp=$("#chatIn"); if(inp)inp.value="";
+  try{await S.db.collection("chat").doc(id).set({ts:stamp,role:"user",text,via:"dashboard",handled:false});}catch(e){toast("Couldn't send. Try again.");return;}
+  const sample=async(turns)=>{const {data,error}=await SB.functions.invoke("coach",{body:{turns}});if(error){let code="error";try{const b=await error.context.json();code=b.code||code;}catch(_){}throw {code};}return {text:data.text};};
+  if(st)st.textContent="Coach is thinking";
+  const turns=S.chat.slice(-12).map(m=>({role:m.role==="user"?"user":"assistant",content:m.text}));
+  if(!turns.length||turns[turns.length-1].content!==text)turns.push({role:"user",content:text});
+  while(turns.length&&turns[0].role!=="user")turns.shift();
+  const brief="You are James's running coach, texting him like a good human coach would: direct, warm, specific, Australian English, short (2 to 6 sentences unless he asks for detail). Never use em dashes or en dashes. Ground every answer in the data below and in sports science. Be conservative with injury: never clear him to run on the foot; send red flags (heat, spreading redness, fever, cannot bear weight) to same-day medical care. If his message implies a plan change (missed sessions, illness, niggle, travel, schedule), say what you would change and end with a line starting PLAN CHANGE: summarising it, so it can be built into the plan. Ask at most one question.\n\n"+coachContext()+"\n\nConversation follows. Reply to his latest message.";
+  turns[0]={role:"user",content:brief+"\n\nJames: "+turns[0].content};
+  try{const {text:reply}=await sample(turns,{cache:false});
+    const t2=new Date(); const s2=iso(t2)+"T"+p2(t2.getHours())+":"+p2(t2.getMinutes())+":"+p2(t2.getSeconds());
+    await S.db.collection("chat").doc(s2.replace(/[^0-9]/g,"")+"-c").set({ts:s2,role:"coach",text:reply,via:"dashboard",planChange:/PLAN CHANGE:/i.test(reply),handled:!/PLAN CHANGE:/i.test(reply)});
+    if(st)st.textContent="";
+  }catch(e){if(st)st.textContent=e&&e.code==="no_key"?"Coach needs the API key added in Supabase. Your message is saved.":"No reply this time. Your message is saved for the next sync.";}
 }
 
 /* Weight */
