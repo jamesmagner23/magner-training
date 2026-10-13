@@ -74,7 +74,7 @@ function coachContext(){
   return "ATHLETE: James, Melbourne, 180cm ~89kg. Marathon PBs 3:13 (Melbourne 11 Oct 2026, foot pain from 2km, cramps from 25km), 3:14:50 Sydney. 5km 17:48. Goal Ballarat Marathon 18 Apr 2027, target "+S.settings.goalMarathon+". Limiter: aerobic endurance at pace (HR decoupling 7 to 10% in marathons). Real past volume 60 to 70km/week.\n"+
    "FOOT: left forefoot injured end of a 24km on 2 Oct in Saucony Endorphin Elite 3 (Bali heat). MRI clear, but swelling and bruising top and sole, centred on the big toe joint. Advised to see a doctor this week: midfoot ligament, sesamoid and gout to rule out. No running until cleared. Elite 3 parked, Elite 2 preferred.\n"+
    "WEIGHT: target "+(S.settings.weightGoal||87)+"kg by race. Recent: "+(Object.values(S.log).filter(l=>l.weight).sort((a,b)=>a.date.localeCompare(b.date)).slice(-7).map(l=>l.date.slice(5)+" "+l.weight).join(", ")||"none logged")+". Aim 0.25 to 0.5kg/week loss, never under-fuel key sessions or long runs.\n"+"SETTINGS: VDOT "+S.settings.vdot+", LTHR "+(S.settings.lthr||"?")+", max HR "+(S.settings.maxHr||"?")+". Zones: "+z.map(x=>x.n+" "+x.txt+(x.hr?" ("+x.hr+")":"")).join("; ")+".\n"+
-   "THIS WEEK ("+(w?"W"+w.n+" "+w.phase:"")+"):\n"+plan+(nxt?"\nNEXT WEEK W"+nxt.n+": "+nxt.focus:"")+"\nLAST 14 DAYS RUNS:\n"+runs+"\nLAST 14 DAYS LOGS:\n"+logs+"\nLATEST COACH NOTE: "+((S.notes[0]||{}).title||"")+". TODAY: "+TODAY+".";
+   "THIS WEEK ("+(w?"W"+w.n+" "+w.phase:"")+"):\n"+plan+(nxt?"\nNEXT WEEK W"+nxt.n+": "+nxt.focus:"")+(()=>{const a=pmc(30);const n=a[a.length-1];return n?"\nLOAD: fitness CTL "+Math.round(n.ctl)+", fatigue ATL "+Math.round(n.atl)+", form TSB "+Math.round(n.tsb):"";})()+"\nLAST 14 DAYS RUNS:\n"+runs+"\nLAST 14 DAYS LOGS:\n"+logs+"\nLATEST COACH NOTE: "+((S.notes[0]||{}).title||"")+". TODAY: "+TODAY+".";
 }
 async function sendChat(text){
   if(!text)return; if(!S.db){toast("Chat is unavailable right now");return;}
@@ -554,6 +554,7 @@ function vPlan(){
 function vFitness(){
   const v=+S.settings.vdot||52, Z=ZONES(), gv=goalVdot();
   let h=head("Understand your fitness","Where your running is","Zones are set from your training VDOT and your threshold heart rate. They move as your races and runs come in.");
+  h+=loadCard();
   h+='<div class="cols two"><div class="stack">';
   h+='<section class="card pad"><div class="ch"><div><div class="eb">01 · What you are doing</div><h2>Current recipe</h2><div class="sub">Minutes per week in each zone, by average pace</div></div><div class="seg" role="group" aria-label="Range">'+[1,4,8].map(n=>'<button data-recipe="'+n+'" aria-pressed="'+(UI.recipe===n)+'">'+n+'W</button>').join("")+'</div></div>'+recipe(UI.recipe)+'</section>';
   // pace at comparable effort
@@ -616,6 +617,84 @@ const METHOD=[
  {k:"Weight",h:"Lighter, but only if you stay strong",p:["The oxygen cost of running scales with body mass, so carrying 4kg less at the same fitness is worth roughly 2 minutes per kg over a marathon, around 6 to 8 minutes for you. That only holds if the loss is fat, not muscle or glycogen.","Aim for 0.25 to 0.5kg a week, from 91 to 92 down to 86 to 88 by April. Take most of it from the base weeks, eat fully around key sessions and long runs, and stop cutting from the taper. Weigh daily but judge the 7-day average: one morning swings 1 to 2kg with water and salt."],r:"Energy cost of running is proportional to body mass (Daniels' Running Formula; Joyner and Coyle 2008, J Physiol). Rate of loss for athletes: Garthe et al. 2011, Int J Sport Nutr Exerc Metab."},
  {k:"The foot",h:"Pain decides, not the calendar",p:["Log foot pain after every run. 0 to 3 out of 10 that settles by the next morning is acceptable. 4 or more, or worse the next day, means drop back a step for 2 to 3 days. Pain that keeps returning after a clear MRI needs a sports podiatrist or physio."],r:"Silbernagel et al. 2007, Am J Sports Med (pain-monitoring model, adapted conservatively)."}
 ];
+
+
+/* Training load: TSS per activity, then fitness (CTL 42d), fatigue (ATL 7d), form (TSB) */
+const SPORT_COL={run:"var(--z-lt2)",bike:"var(--z-st)",swim:"var(--z-rec)",gym:"var(--z-sp)",other:"var(--z-x)"};
+const SPORT_LBL={run:"Run",bike:"Ride",swim:"Swim",gym:"Gym",other:"Other"};
+function sportKind(a){const t=String(a.type||"")+" "+String(a.title||"");
+  if(isRun(a)||/run/i.test(a.type||""))return "run"; if(/ride|cycl|bike|velo/i.test(t))return "bike"; if(/swim/i.test(t))return "swim";
+  if(/weight|strength|workout|training|crossfit|fitness|stair|gym|yoga|pilates/i.test(t))return "gym"; return "other";}
+function tssOf(a){
+  const h=(+a.sec||0)/3600, L=+S.settings.lthr||167; if(!(h>0))return 0;
+  const k=sportKind(a);
+  if(/meditat|breath/i.test(String(a.type||"")+String(a.title||"")))return 0;
+  const ifHr=off=>a.avgHr?Math.min(1.15,a.avgHr/(L-off)):null;
+  let IF;
+  if(k==="run"){IF=ifHr(0); if(IF==null&&a.km>0){const T=paceF(.88,+S.settings.vdot||52);IF=Math.min(1.15,T/((+a.sec)/(+a.km)));} if(IF==null)IF=.75;}
+  else if(k==="bike")IF=ifHr(7)??.65;
+  else if(k==="swim")IF=ifHr(12)??.70;
+  else if(k==="gym")IF=a.avgHr?Math.min(.85,a.avgHr/L):.55;
+  else IF=/walk|hike/i.test(String(a.type||"")+String(a.title||""))?Math.min(.55,ifHr(0)??.5):(ifHr(0)??.55);
+  return h*IF*IF*100;
+}
+function dailyLoad(){
+  const d={};const add=(date,k,v)=>{if(!v)return;(d[date]=d[date]||{t:0,by:{}});d[date].t+=v;d[date].by[k]=(d[date].by[k]||0)+v;};
+  Object.values(S.runs).forEach(a=>add(a.date,sportKind(a),tssOf(a)));
+  Object.values(S.log).forEach(l=>{ // manual entries only when nothing synced that day for that kind
+    const syn=Object.values(S.runs).filter(r=>r.date===l.date);
+    if(l.manualKm>0&&!syn.some(r=>isRun(r)&&r.source!=="manual"))0;
+    if(l.xMin>0){const k=/bike|ride/i.test(l.xType||"")?"bike":/swim|water/i.test(l.xType||"")?"swim":"other";if(!syn.some(r=>sportKind(r)===k))add(l.date,k,(l.xMin/60)*(k==="bike"?.65*.65:.7*.7)*100);}
+    if(l.gymDone&&!syn.some(r=>sportKind(r)==="gym"))add(l.date,"gym",45/60*.55*.55*100);
+  });
+  return d;
+}
+function pmc(days){
+  const d=dailyLoad(); const keys=Object.keys(d).sort(); if(!keys.length)return [];
+  let day=keys[0], ctl=0, atl=0; const out=[];
+  while(day<=TODAY){const t=d[day]?d[day].t:0; const tsb=ctl-atl; ctl+=(t-ctl)/42; atl+=(t-atl)/7; out.push({d:day,t,ctl,atl,tsb,by:(d[day]||{}).by||{}}); day=addD(day,1);}
+  return out.slice(-days);
+}
+function formLabel(t){return t<-30?["High risk","bad"]:t<-10?["Building","warn"]:t<5?["Neutral",""]:t<25?["Fresh","good"]:["Detraining",""];}
+function loadCard(){
+  const all=pmc(400); if(!all.length)return "";
+  const win=UI.loadWin||112, ser=all.slice(-win), now=all[all.length-1], wk=all[Math.max(0,all.length-8)];
+  const W=640,H=230,L=34,R=34,T=14,B=24;
+  const maxY=Math.max(60,...ser.map(p=>Math.max(p.ctl,p.atl)))*1.1, tsbMin=Math.min(-30,...ser.map(p=>p.tsb)), tsbMax=Math.max(25,...ser.map(p=>p.tsb));
+  const X=i=>L+(W-L-R)*(ser.length<2?.5:i/(ser.length-1)), Y=v=>T+(H-T-B)*(1-v/maxY);
+  const mid=T+(H-T-B)*.62, Yt=v=>mid-(v/Math.max(Math.abs(tsbMin),tsbMax))*((H-T-B)*.36);
+  let g='';
+  [0.25,0.5,0.75].forEach(f=>{const v=Math.round(maxY*f/10)*10;g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--dline)"/><text x="'+(L-6)+'" y="'+(Y(v)+3)+'" text-anchor="end">'+v+'</text>';});
+  // daily TSS bars stacked by sport
+  const bw=Math.max(1,(W-L-R)/ser.length-1), tMax=Math.max(150,...ser.map(p=>p.t));
+  ser.forEach((p,i)=>{let acc=0;["run","bike","swim","gym","other"].forEach(k=>{const v=p.by[k]||0;if(!v)return;const hh=(v/tMax)*(H-T-B)*.35;g+='<rect x="'+(X(i)-bw/2)+'" y="'+(H-B-acc-hh)+'" width="'+bw+'" height="'+hh+'" fill="'+SPORT_COL[k]+'" opacity=".55"/>';acc+=hh;});});
+  // form area around zero line
+  g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+mid+'" y2="'+mid+'" stroke="var(--dline)" stroke-dasharray="2 3"/>';
+  const area='M'+X(0)+' '+mid+' '+ser.map((p,i)=>'L'+X(i).toFixed(1)+' '+Yt(p.tsb).toFixed(1)).join(' ')+' L'+X(ser.length-1)+' '+mid+' Z';
+  g+='<path d="'+area+'" fill="var(--accent)" opacity=".18"/>';
+  const line=(k,c,w,dash)=>'<path d="'+ser.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p[k]).toFixed(1)).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linejoin="round"/>';
+  g+=line("atl","var(--z-mp)",1.6,"4 3")+line("ctl","var(--on)",2.4);
+  g+='<circle cx="'+X(ser.length-1)+'" cy="'+Y(now.ctl)+'" r="4" fill="var(--on)"/><text x="'+(W-R+6)+'" y="'+(Y(now.ctl)+3)+'" style="fill:var(--on)">'+Math.round(now.ctl)+'</text>';
+  g+='<text x="'+L+'" y="'+(H-6)+'">'+fD(ser[0].d)+'</text><text x="'+(W-R)+'" y="'+(H-6)+'" text-anchor="end">Today</text>';
+  const [fl,fc]=formLabel(now.tsb); const dC=now.ctl-wk.ctl;
+  const wkT=all.slice(-7).reduce((a,p)=>a+p.t,0);
+  return '<section class="dk pad span2" style="margin-bottom:14px"><div class="ch"><div><div class="eb">00 · Training load</div><h2>Fitness, fatigue and form</h2><div class="lede">Every Strava activity scored for stress: runs, rides, swims and gym. Bars are daily load by sport.</div></div><div class="seg" role="group" aria-label="Range">'+[[56,"8W"],[112,"16W"],[365,"1Y"]].map(o=>'<button data-loadwin="'+o[0]+'" aria-pressed="'+(win===o[0])+'">'+o[1]+'</button>').join("")+'</div></div>'+
+   '<div class="metrics"><div class="m"><div class="k">Fitness (CTL)</div><div class="v">'+Math.round(now.ctl)+'<small>'+(dC>=0?"+":"")+dC.toFixed(1)+' /wk</small></div></div><div class="m"><div class="k">Fatigue (ATL)</div><div class="v">'+Math.round(now.atl)+'</div></div><div class="m"><div class="k">Form (TSB)</div><div class="v">'+(now.tsb>0?"+":"")+Math.round(now.tsb)+'<small class="'+fc+'" style="color:inherit">'+fl+'</small></div></div><div class="m"><div class="k">Load 7 days</div><div class="v">'+Math.round(wkT)+'<small>TSS</small></div></div></div>'+
+   '<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Fitness, fatigue and form over time">'+g+'</svg>'+
+   '<div class="legend"><span><i style="background:var(--on)"></i>Fitness</span><span><i style="background:var(--z-mp)"></i>Fatigue</span><span><i style="background:var(--accent);opacity:.5"></i>Form</span>'+["run","bike","swim","gym"].map(k=>'<span><i style="background:'+SPORT_COL[k]+';opacity:.6"></i>'+SPORT_LBL[k]+'</span>').join("")+'</div>'+
+   '<div class="coach" style="margin-top:14px"><span class="eb">Read</span><span>'+loadRead(all,now,dC)+'</span></div></section>';
+}
+function loadRead(all,now,dC){
+  const r=[];
+  if(dC>8)r.push("Fitness is climbing more than 8 a week. That's aggressive; hold here for a week.");
+  else if(dC>3)r.push("Fitness is building steadily. Good rate.");
+  else if(dC<-3)r.push("Fitness is drifting down. Expected in a recovery or injury block, not in a build.");
+  if(now.tsb<-30)r.push("Form is below minus 30. Injury and illness risk is high; take an easy day.");
+  else if(now.tsb<-10)r.push("Form in the minus 10 to minus 30 band is where fitness gets built.");
+  else if(now.tsb>5&&now.tsb<25)r.push("You're fresh. This is where you race well.");
+  r.push("For a 2:55 build, aim for fitness in the 70s by late March, peaking near form plus 10 on race day.");
+  return r.join(" ");
+}
 
 /* Weight */
 function weightCard(){
@@ -762,6 +841,7 @@ function bind(r){
   const cf=$("#chatF",r);
   if(cf){const box=$("#chat",r);box.scrollTop=box.scrollHeight;cf.onsubmit=e=>{e.preventDefault();sendChat($("#chatIn",r).value.trim());};
     $("#chatIn",r).onkeydown=e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))cf.requestSubmit();};}
+  r.querySelectorAll("[data-loadwin]").forEach(b=>b.onclick=()=>{UI.loadWin=+b.dataset.loadwin;render();});
   r.querySelectorAll("[data-recipe]").forEach(b=>b.onclick=()=>{UI.recipe=+b.dataset.recipe;render();});
   const fi=$("#fIn",r),dr=$("#drop",r);
   if(fi){fi.onchange=()=>{importFiles([...fi.files]);fi.value="";};dr.ondragover=e=>{e.preventDefault();dr.classList.add("over");};dr.ondragleave=()=>dr.classList.remove("over");dr.ondrop=e=>{e.preventDefault();dr.classList.remove("over");importFiles([...e.dataTransfer.files]);};}
