@@ -173,6 +173,34 @@ async function sendChat(text){
 .bars{width:100%;height:auto;display:block;margin-top:10px}
 .bars text{font-family:var(--mono);font-size:9px;fill:var(--ink3)}
 .dk .bars text{fill:var(--on3)}
+.lro{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:11px;color:var(--on2);margin:14px 0 4px;min-height:16px}
+.lro b{color:var(--on);font-weight:500}
+.dotk{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:8px;vertical-align:1px;flex:none}
+.acts{margin-top:12px}
+.act{display:flex;align-items:flex-start;gap:0;padding:10px 0;border-top:1px solid var(--line)}
+.act:first-child{border-top:0}
+.act .dotk{margin-top:6px}
+.act-a{flex:1;min-width:0;display:flex;flex-direction:column}
+.act-a b{font-weight:500}
+.act-n{text-align:right;display:flex;flex-direction:column;font-family:var(--mono)}
+.act-n b{font-size:18px;font-weight:500}
+.act-n .sub{font-size:10px}
+.wk-list{margin-top:10px}
+.wk-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.3fr) auto;gap:12px;align-items:center;width:100%;padding:10px 0;border:0;border-top:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.wk-row:first-child{border-top:0}
+.wk-a{display:flex;flex-direction:column;min-width:0}
+.wk-a b{font-weight:500}
+.wk-a .sub{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wk-bar{display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--sunken)}
+.wk-bar i{display:block;height:100%;opacity:.85}
+.wk-n{display:flex;flex-direction:column;text-align:right;font-family:var(--mono);min-width:64px}
+.wk-n b{font-size:16px;font-weight:500}
+.wk-n .sub{font-size:10px}
+.share{height:6px;border-radius:3px;background:var(--sunken);margin-top:6px;overflow:hidden}
+.share i{display:block;height:100%;opacity:.85}
+.defs{margin:8px 0 0}
+.defs dt{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-top:12px}
+.defs dd{margin:4px 0 0;font-size:14px;color:var(--ink2);line-height:1.5}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px;text-transform:uppercase;letter-spacing:.05em}
 .dk .legend{color:var(--on3)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -656,33 +684,106 @@ function pmc(days){
   return out.slice(-days);
 }
 function formLabel(t){return t<-30?["High risk","bad"]:t<-10?["Building","warn"]:t<5?["Neutral",""]:t<25?["Fresh","good"]:["Detraining",""];}
-function loadCard(){
-  const all=pmc(400); if(!all.length)return "";
-  const win=UI.loadWin||112, ser=all.slice(-win), now=all[all.length-1], wk=all[Math.max(0,all.length-8)];
-  const W=640,H=230,L=34,R=34,T=14,B=24;
+const SPORTS=["run","bike","swim","gym","other"];
+function tssHow(a){const k=sportKind(a); if(a.avgHr)return "heart rate"; if(k==="run"&&a.km>0)return "pace"; return "estimate";}
+function loadItems(date){
+  const items=Object.values(S.runs).filter(r=>r.date===date).map(r=>({title:r.title||r.type||"Activity",k:sportKind(r),sec:+r.sec||0,km:+r.km||0,hr:r.avgHr,run:isRun(r),tss:tssOf(r),how:tssHow(r),start:r.start||""}));
+  const l=S.log[date];
+  if(l){
+    if(l.xMin>0){const k=/bike|ride/i.test(l.xType||"")?"bike":/swim|water/i.test(l.xType||"")?"swim":"other";if(!items.some(i=>i.k===k))items.push({title:(l.xType||"Cross-train")+" (logged)",k,sec:l.xMin*60,tss:(l.xMin/60)*(k==="bike"?.65*.65:.7*.7)*100,how:"estimate"});}
+    if(l.gymDone&&!items.some(i=>i.k==="gym"))items.push({title:"Strength (logged)",k:"gym",sec:2700,tss:45/60*.55*.55*100,how:"estimate"});
+  }
+  return items.filter(i=>i.tss>0||i.sec>0).sort((x,y)=>String(x.start).localeCompare(String(y.start)));
+}
+function loadSvg(ser,id,H){
+  H=H||230; const W=640,L=34,R=34,T=14,B=24, now=ser[ser.length-1];
   const maxY=Math.max(60,...ser.map(p=>Math.max(p.ctl,p.atl)))*1.1, tsbMin=Math.min(-30,...ser.map(p=>p.tsb)), tsbMax=Math.max(25,...ser.map(p=>p.tsb));
   const X=i=>L+(W-L-R)*(ser.length<2?.5:i/(ser.length-1)), Y=v=>T+(H-T-B)*(1-v/maxY);
   const mid=T+(H-T-B)*.62, Yt=v=>mid-(v/Math.max(Math.abs(tsbMin),tsbMax))*((H-T-B)*.36);
   let g='';
   [0.25,0.5,0.75].forEach(f=>{const v=Math.round(maxY*f/10)*10;g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--dline)"/><text x="'+(L-6)+'" y="'+(Y(v)+3)+'" text-anchor="end">'+v+'</text>';});
-  // daily TSS bars stacked by sport
   const bw=Math.max(1,(W-L-R)/ser.length-1), tMax=Math.max(150,...ser.map(p=>p.t));
-  ser.forEach((p,i)=>{let acc=0;["run","bike","swim","gym","other"].forEach(k=>{const v=p.by[k]||0;if(!v)return;const hh=(v/tMax)*(H-T-B)*.35;g+='<rect x="'+(X(i)-bw/2)+'" y="'+(H-B-acc-hh)+'" width="'+bw+'" height="'+hh+'" fill="'+SPORT_COL[k]+'" opacity=".55"/>';acc+=hh;});});
-  // form area around zero line
+  ser.forEach((p,i)=>{let acc=0;SPORTS.forEach(k=>{const v=p.by[k]||0;if(!v)return;const hh=(v/tMax)*(H-T-B)*.35;g+='<rect x="'+(X(i)-bw/2)+'" y="'+(H-B-acc-hh)+'" width="'+bw+'" height="'+hh+'" fill="'+SPORT_COL[k]+'" opacity=".55"/>';acc+=hh;});});
   g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+mid+'" y2="'+mid+'" stroke="var(--dline)" stroke-dasharray="2 3"/>';
-  const area='M'+X(0)+' '+mid+' '+ser.map((p,i)=>'L'+X(i).toFixed(1)+' '+Yt(p.tsb).toFixed(1)).join(' ')+' L'+X(ser.length-1)+' '+mid+' Z';
-  g+='<path d="'+area+'" fill="var(--accent)" opacity=".18"/>';
+  g+='<path d="M'+X(0)+' '+mid+' '+ser.map((p,i)=>'L'+X(i).toFixed(1)+' '+Yt(p.tsb).toFixed(1)).join(' ')+' L'+X(ser.length-1)+' '+mid+' Z" fill="var(--accent)" opacity=".18"/>';
   const line=(k,c,w,dash)=>'<path d="'+ser.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p[k]).toFixed(1)).join(' ')+'" fill="none" stroke="'+c+'" stroke-width="'+w+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linejoin="round"/>';
   g+=line("atl","var(--z-mp)",1.6,"4 3")+line("ctl","var(--on)",2.4);
   g+='<circle cx="'+X(ser.length-1)+'" cy="'+Y(now.ctl)+'" r="4" fill="var(--on)"/><text x="'+(W-R+6)+'" y="'+(Y(now.ctl)+3)+'" style="fill:var(--on)">'+Math.round(now.ctl)+'</text>';
   g+='<text x="'+L+'" y="'+(H-6)+'">'+fD(ser[0].d)+'</text><text x="'+(W-R)+'" y="'+(H-6)+'" text-anchor="end">Today</text>';
+  g+='<g class="xh" style="display:none;pointer-events:none"><line y1="'+T+'" y2="'+(H-B)+'" stroke="var(--on2)" stroke-width="1"/><circle class="xc" r="4.5" fill="var(--on)" stroke="var(--dark)" stroke-width="2"/><circle class="xa" r="3.5" fill="var(--z-mp)"/></g>';
+  (UI.lg=UI.lg||{})[id]={ser,X,Y,W,L,R};
+  return '<svg class="bars lsvg" id="'+id+'" viewBox="0 0 '+W+' '+H+'" style="touch-action:pan-y;cursor:crosshair" role="img" aria-label="Fitness, fatigue and form over time. Tap a day for detail.">'+g+'</svg>';
+}
+function loadRO(p){const [fl]=formLabel(p.tsb);return '<b>'+(p.d===TODAY?"Today":fD(p.d,true))+'</b><span>Fitness '+Math.round(p.ctl)+'</span><span>Fatigue '+Math.round(p.atl)+'</span><span>Form '+(p.tsb>0?"+":"")+Math.round(p.tsb)+' '+fl.toLowerCase()+'</span><span>'+Math.round(p.t)+' TSS</span>';}
+function bindScrub(svg,onPick,onTap){
+  const G=UI.lg[svg.id]; if(!G)return; const n=G.ser.length;
+  const idx=e=>{const r=svg.getBoundingClientRect();const vx=(e.clientX-r.left)/r.width*G.W;return Math.max(0,Math.min(n-1,Math.round((vx-G.L)/(G.W-G.L-G.R)*(n-1))));};
+  const show=i=>{const p=G.ser[i],x=G.X(i),xh=svg.querySelector(".xh");xh.style.display="";xh.querySelector("line").setAttribute("x1",x);xh.querySelector("line").setAttribute("x2",x);
+    const c=xh.querySelector(".xc");c.setAttribute("cx",x);c.setAttribute("cy",G.Y(p.ctl));const a=xh.querySelector(".xa");a.setAttribute("cx",x);a.setAttribute("cy",G.Y(p.atl));onPick&&onPick(p,i);};
+  svg._show=show; let down=null,moved=false;
+  svg.addEventListener("pointerdown",e=>{down={x:e.clientX,y:e.clientY};moved=false;show(idx(e));});
+  svg.addEventListener("pointermove",e=>{if(e.pointerType==="mouse"&&!down){show(idx(e));return;} if(!down)return; if(Math.abs(e.clientX-down.x)>6)moved=true; show(idx(e));});
+  svg.addEventListener("pointerup",e=>{const i=idx(e);down=null;if(!moved&&onTap)onTap(G.ser[i]);});
+  svg.addEventListener("pointercancel",()=>{down=null;});
+}
+function loadCard(){
+  const all=pmc(400); if(!all.length)return "";
+  const win=UI.loadWin||112, ser=all.slice(-win), now=all[all.length-1], wk=all[Math.max(0,all.length-8)];
   const [fl,fc]=formLabel(now.tsb); const dC=now.ctl-wk.ctl;
   const wkT=all.slice(-7).reduce((a,p)=>a+p.t,0);
-  return '<section class="dk pad span2" style="margin-bottom:14px"><div class="ch"><div><div class="eb">00 · Training load</div><h2>Fitness, fatigue and form</h2><div class="lede">Every Strava activity scored for stress: runs, rides, swims and gym. Bars are daily load by sport.</div></div><div class="seg" role="group" aria-label="Range">'+[[56,"8W"],[112,"16W"],[365,"1Y"]].map(o=>'<button data-loadwin="'+o[0]+'" aria-pressed="'+(win===o[0])+'">'+o[1]+'</button>').join("")+'</div></div>'+
+  return '<section class="dk pad span2" style="margin-bottom:14px"><div class="ch"><div><div class="eb">00 · Training load</div><h2>Fitness, fatigue and form</h2><div class="lede">Every Strava activity scored for stress: runs, rides, swims and gym. Drag across the chart to scrub, tap a day to drill in.</div></div><div class="seg" role="group" aria-label="Range">'+[[56,"8W"],[112,"16W"],[365,"1Y"]].map(o=>'<button data-loadwin="'+o[0]+'" aria-pressed="'+(win===o[0])+'">'+o[1]+'</button>').join("")+'</div></div>'+
    '<div class="metrics"><div class="m"><div class="k">Fitness (CTL)</div><div class="v">'+Math.round(now.ctl)+'<small>'+(dC>=0?"+":"")+dC.toFixed(1)+' /wk</small></div></div><div class="m"><div class="k">Fatigue (ATL)</div><div class="v">'+Math.round(now.atl)+'</div></div><div class="m"><div class="k">Form (TSB)</div><div class="v">'+(now.tsb>0?"+":"")+Math.round(now.tsb)+'<small class="'+fc+'" style="color:inherit">'+fl+'</small></div></div><div class="m"><div class="k">Load 7 days</div><div class="v">'+Math.round(wkT)+'<small>TSS</small></div></div></div>'+
-   '<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Fitness, fatigue and form over time">'+g+'</svg>'+
+   '<div class="lro" id="lcRO">'+loadRO(now)+'</div>'+loadSvg(ser,"lcSvg")+
    '<div class="legend"><span><i style="background:var(--on)"></i>Fitness</span><span><i style="background:var(--z-mp)"></i>Fatigue</span><span><i style="background:var(--accent);opacity:.5"></i>Form</span>'+["run","bike","swim","gym"].map(k=>'<span><i style="background:'+SPORT_COL[k]+';opacity:.6"></i>'+SPORT_LBL[k]+'</span>').join("")+'</div>'+
+   '<button class="btn ghost block" type="button" data-loadopen="'+TODAY+'" style="margin-top:12px">Open the breakdown <span aria-hidden="true">›</span></button>'+
    '<div class="coach" style="margin-top:14px"><span class="eb">Read</span><span>'+loadRead(all,now,dC)+'</span></div></section>';
+}
+function monOf(d){return addD(d,-((pISO(d).getDay()+6)%7));}
+function openLoad(date){
+  const all=pmc(400); if(!all.length)return;
+  UI.ldWin=UI.ldWin||UI.loadWin||112; UI.ldDate=date||UI.ldDate||TODAY;
+  const ser=all.slice(-UI.ldWin); if(UI.ldDate<ser[0].d)UI.ldDate=ser[0].d;
+  // weeks
+  const wks={}; ser.forEach(p=>{const m=monOf(p.d);const w=(wks[m]=wks[m]||{m,t:0,by:{},sec:0,end:p,n:0});w.t+=p.t;SPORTS.forEach(k=>w.by[k]=(w.by[k]||0)+(p.by[k]||0));w.end=p;});
+  Object.values(S.runs).forEach(r=>{const m=monOf(r.date);if(wks[m]&&r.date>=ser[0].d){wks[m].sec+=+r.sec||0;wks[m].n++;}});
+  const wl=Object.values(wks).sort((a,b)=>b.m.localeCompare(a.m)); const wMax=Math.max(1,...wl.map(w=>w.t));
+  const prevCtl=m=>{const i=all.findIndex(p=>p.d===addD(m,-1));return i>=0?all[i].ctl:null;};
+  // sports
+  const sp={}; Object.values(S.runs).filter(r=>r.date>=ser[0].d).forEach(r=>{const k=sportKind(r);const s=(sp[k]=sp[k]||{n:0,sec:0,tss:0,km:0});s.n++;s.sec+=+r.sec||0;s.tss+=tssOf(r);s.km+=+r.km||0;});
+  const spT=Object.values(sp).reduce((a,s)=>a+s.tss,0)||1;
+  const winBtns='<div class="seg" role="group" aria-label="Range">'+[[56,"8W"],[112,"16W"],[365,"1Y"]].map(o=>'<button data-ldwin="'+o[0]+'" aria-pressed="'+(UI.ldWin===o[0])+'">'+o[1]+'</button>').join("")+'</div>';
+  let x='<div class="sheet-top"><span class="eb">Training load</span><button class="btn ghost" id="shX" type="button">Close</button></div>';
+  x+='<section class="dk pad"><div class="ch"><div><h2 style="margin:0">Fitness, fatigue and form</h2><div class="lede">Tap or drag to pick a day.</div></div>'+winBtns+'</div><div class="lro" id="ldRO"></div>'+loadSvg(ser,"ldSvg",250)+
+     '<div class="legend"><span><i style="background:var(--on)"></i>Fitness</span><span><i style="background:var(--z-mp)"></i>Fatigue</span><span><i style="background:var(--accent);opacity:.5"></i>Form</span>'+["run","bike","swim","gym"].map(k=>'<span><i style="background:'+SPORT_COL[k]+';opacity:.6"></i>'+SPORT_LBL[k]+'</span>').join("")+'</div></section>';
+  x+='<section class="card pad" id="ldDay" style="margin-top:12px"></section>';
+  x+='<section class="card pad" style="margin-top:12px"><div class="eb">By week</div><h2>Weekly load</h2><div class="sub">Tap a week to jump to it. Ramp is the change in fitness over the week; above 5 a week is steep, above 8 is asking for trouble.</div><div class="wk-list">'+
+     wl.map(w=>{const pc=prevCtl(w.m);const ramp=pc==null?null:w.end.ctl-pc;
+       const bar=SPORTS.map(k=>w.by[k]?'<i style="width:'+(w.by[k]/wMax*100).toFixed(1)+'%;background:'+SPORT_COL[k]+'"></i>':'').join("");
+       return '<button type="button" class="wk-row" data-ldpick="'+w.end.d+'"><span class="wk-a"><b>'+fD(w.m)+'</b><span class="sub">'+(w.n?w.n+' sessions · '+(w.sec/3600).toFixed(1)+' h':'No sessions')+'</span></span><span class="wk-bar">'+bar+'</span><span class="wk-n"><b>'+Math.round(w.t)+'</b><span class="sub">fit '+Math.round(w.end.ctl)+(ramp==null?'':' <span style="color:'+(ramp>8?'var(--bad)':ramp>5?'var(--warn)':'inherit')+'">'+(ramp>=0?'+':'')+ramp.toFixed(1)+'</span>')+'</span></span></button>';}).join("")+'</div></section>';
+  x+='<section class="card pad" style="margin-top:12px"><div class="eb">By sport</div><h2>Where the load came from</h2><div class="sub">'+(UI.ldWin===365?'Last year':'Last '+(UI.ldWin/7)+' weeks')+'</div><table class="tbl" style="margin-top:8px"><tbody>'+
+     SPORTS.filter(k=>sp[k]).sort((a,b)=>sp[b].tss-sp[a].tss).map(k=>{const s=sp[k];return '<tr><td><span class="dotk" style="background:'+SPORT_COL[k]+'"></span><b style="font-weight:500">'+SPORT_LBL[k]+'</b><div class="sub">'+s.n+' sessions · '+(s.sec/3600).toFixed(1)+' h'+(s.km>0&&k!=="gym"?' · '+s.km.toFixed(0)+' km':'')+'</div><div class="share"><i style="width:'+(s.tss/spT*100).toFixed(1)+'%;background:'+SPORT_COL[k]+'"></i></div></td><td class="r mono">'+Math.round(s.tss)+'<div class="sub">'+Math.round(s.tss/spT*100)+'%</div></td></tr>';}).join("")+'</tbody></table></section>';
+  x+='<section class="card pad" style="margin-top:12px"><div class="eb">How it works</div><h2>Reading the numbers</h2><dl class="defs">'+
+     '<dt>TSS</dt><dd>Training stress for one session. An hour flat out at threshold scores 100. Worked out from heart rate against your threshold of '+(+S.settings.lthr||167)+' bpm, with rides scored 7 beats lower and swims 12 lower because heart rate runs lower there. Runs without heart rate use pace; anything else without heart rate gets a conservative estimate.</dd>'+
+     '<dt>Fitness</dt><dd>Your 6-week rolling load. Slow to build, slow to lose. This is the number to grow.</dd>'+
+     '<dt>Fatigue</dt><dd>Your 1-week rolling load. Jumps after big days and fades fast.</dd>'+
+     '<dt>Form</dt><dd>Fitness minus fatigue. Minus 10 to minus 30 is a productive build, below minus 30 is risky, plus 5 to plus 25 is race ready.</dd></dl></section>';
+  $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Training load">'+x+'</div></div>';
+  $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
+  const svg=$("#ldSvg"), G=UI.lg.ldSvg;
+  const pick=p=>{UI.ldDate=p.d;$("#ldRO").innerHTML=loadRO(p);$("#ldDay").innerHTML=loadDayHtml(p);const ob=$("#ldDay [data-ldlog]");if(ob)ob.onclick=()=>{closeSheet();openDay(ob.dataset.ldlog);};};
+  bindScrub(svg,pick,null);
+  const i0=Math.max(0,G.ser.findIndex(p=>p.d===UI.ldDate)); svg._show(i0<0?G.ser.length-1:i0);
+  document.querySelectorAll("#sheetRoot [data-ldwin]").forEach(b=>b.onclick=()=>{UI.ldWin=+b.dataset.ldwin;openLoad(UI.ldDate);});
+  document.querySelectorAll("#sheetRoot [data-ldpick]").forEach(b=>b.onclick=()=>{const i=G.ser.findIndex(p=>p.d===b.dataset.ldpick);if(i>=0){svg._show(i);$(".sheet").scrollTo({top:0,behavior:"smooth"});}});
+}
+function loadDayHtml(p){
+  const its=loadItems(p.d), [fl,fc]=formLabel(p.tsb), it=dayIndex()[p.d];
+  let h='<div class="eb">'+(p.d===TODAY?"Today":"Selected day")+'</div><h2>'+fD(p.d,true)+'</h2>'+(it?'<div class="sub">Planned: '+esc(it.d.title||"")+(it.d.km?' · '+it.d.km+' km':'')+'</div>':'')+
+   '<div class="metrics"><div class="m"><div class="k">Fitness</div><div class="v">'+Math.round(p.ctl)+'</div></div><div class="m"><div class="k">Fatigue</div><div class="v">'+Math.round(p.atl)+'</div></div><div class="m"><div class="k">Form</div><div class="v">'+(p.tsb>0?"+":"")+Math.round(p.tsb)+'<small class="'+fc+'">'+fl+'</small></div></div><div class="m"><div class="k">Day load</div><div class="v">'+Math.round(p.t)+'<small>TSS</small></div></div></div>';
+  if(!its.length)h+='<div class="empty" style="margin-top:12px">Rest day. Nothing recorded, so fitness eased about 2 percent and fatigue about 13 percent.</div>';
+  else h+='<div class="acts">'+its.map(a=>'<div class="act"><span class="dotk" style="background:'+SPORT_COL[a.k]+'"></span><span class="act-a"><b>'+esc(a.title)+'</b><span class="sub">'+SPORT_LBL[a.k]+' · '+fDur(a.sec)+(a.run&&a.km>0?' · '+a.km.toFixed(2)+' km · '+fP(a.sec/a.km)+'/km':(a.km>0?' · '+a.km.toFixed(1)+' km':''))+(a.hr?' · '+Math.round(a.hr)+' bpm':'')+'</span></span><span class="act-n"><b>'+Math.round(a.tss)+'</b><span class="sub">by '+a.how+'</span></span></div>').join("")+'</div>';
+  h+='<button class="btn ghost block" type="button" data-ldlog="'+p.d+'" style="margin-top:12px">Open this day\'s log</button>';
+  return h;
 }
 function loadRead(all,now,dC){
   const r=[];
@@ -842,6 +943,8 @@ function bind(r){
   if(cf){const box=$("#chat",r);box.scrollTop=box.scrollHeight;cf.onsubmit=e=>{e.preventDefault();sendChat($("#chatIn",r).value.trim());};
     $("#chatIn",r).onkeydown=e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))cf.requestSubmit();};}
   r.querySelectorAll("[data-loadwin]").forEach(b=>b.onclick=()=>{UI.loadWin=+b.dataset.loadwin;render();});
+  r.querySelectorAll("[data-loadopen]").forEach(b=>b.onclick=()=>openLoad(b.dataset.loadopen));
+  {const s=r.querySelector("#lcSvg"); if(s)bindScrub(s,p=>{const ro=r.querySelector("#lcRO");if(ro)ro.innerHTML=loadRO(p);},p=>openLoad(p.d));}
   r.querySelectorAll("[data-recipe]").forEach(b=>b.onclick=()=>{UI.recipe=+b.dataset.recipe;render();});
   const fi=$("#fIn",r),dr=$("#drop",r);
   if(fi){fi.onchange=()=>{importFiles([...fi.files]);fi.value="";};dr.ondragover=e=>{e.preventDefault();dr.classList.add("over");};dr.ondragleave=()=>dr.classList.remove("over");dr.ondrop=e=>{e.preventDefault();dr.classList.remove("over");importFiles([...e.dataTransfer.files]);};}
