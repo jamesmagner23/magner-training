@@ -273,7 +273,7 @@ textarea{min-height:64px;resize:vertical}
   <div class="top-in"><span class="mark" aria-hidden="true"></span><span class="brand">Magner Training</span><span class="sp"></span><span class="race" id="raceChip">Ballarat</span></div>
   <div class="navw"><nav class="nav" id="nav" aria-label="Sections"></nav></div>
 </header>
-<section class="signin" id="signin" hidden><div class="card pad"><span class="mark" aria-hidden="true" style="display:block;margin-bottom:14px"></span><div class="eb acc">Magner Training</div><h1 style="margin-top:6px">Sign in</h1><div class="lede">We email you a link. Open it on this phone and you stay signed in.</div><form id="siF"><div class="field"><label for="siE">Email</label><input id="siE" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com"></div><button class="btn block" style="margin-top:14px" id="siGo" type="submit">Email me a sign-in link</button></form><div class="sub" id="siMsg" style="margin-top:12px"></div><form id="siCodeF" hidden><div class="field"><label for="siCode">Or enter the 6-digit code from the email</label><input id="siCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div><button class="btn ghost block" style="margin-top:10px" type="submit">Verify code</button></form></div></section>
+<section class="signin" id="signin" hidden><div class="card pad"><span class="mark" aria-hidden="true" style="display:block;margin-bottom:14px"></span><div class="eb acc">Magner Training</div><h1 style="margin-top:6px">Sign in</h1><div class="lede">We email you a link. Open it on this phone and you stay signed in.</div><form id="siF"><div class="field"><label for="siE">Email</label><input id="siE" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com"></div><button class="btn block" style="margin-top:14px" id="siGo" type="submit">Email me a sign-in link</button></form><div class="sub" id="siMsg" style="margin-top:12px"></div><form id="siCodeF" hidden><div class="field"><label for="siCode">On iPhone: in the email, press and hold Log In, tap Copy Link, then paste it here</label><input id="siCode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste the link"></div><button class="btn block" style="margin-top:10px" type="submit">Sign in</button></form><div id="siSafari" hidden><div class="hr"></div><div class="eb acc">Opened in Safari</div><div class="sub" style="margin-top:6px">You can use the app right here in Safari. If you added it to your home screen, copy this and paste it into the app instead.</div><input id="siSafariUrl" type="text" readonly style="margin-top:10px"><button class="btn ghost block" id="siCopy" type="button" style="margin-top:10px">Copy</button></div></div></section>
 <main class="wrap" id="app"><div class="empty">Loading your plan</div></main>
 <div id="sheetRoot"></div>
 <div id="toastRoot"></div>
@@ -287,7 +287,7 @@ if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.ser
 "use strict";
 const RACE_DATE="2027-04-18";
 /* Supabase */
-const SB=window.supabase.createClient("https://fmhewjrhcinxeyixjizj.supabase.co","sb_publishable_kAJ0h0WZ1y2v5MvK4rU0lA_Ug2_ioJk",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"pkce"}});
+const SB=window.supabase.createClient("https://fmhewjrhcinxeyixjizj.supabase.co","sb_publishable_kAJ0h0WZ1y2v5MvK4rU0lA_Ug2_ioJk",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"implicit"}});
 function makeDb(sb){
   const subs={};let chan=null;
   async function load(col){const {data,error}=await sb.from("mt_docs").select("id,data").eq("collection",col).limit(5000);if(error)throw error;return data;}
@@ -306,10 +306,20 @@ function bindSignin(){
 $("#siF").onsubmit=async e=>{e.preventDefault();const email=$("#siE").value.trim();const b=$("#siGo");b.disabled=true;
   const {error}=await SB.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
   b.disabled=false;$("#siMsg").textContent=error?("Couldn't send: "+error.message):"Check your email for the sign-in link.";if(!error)$("#siCodeF").hidden=false;};
-$("#siCodeF").onsubmit=async e=>{e.preventDefault();const {error}=await SB.auth.verifyOtp({email:$("#siE").value.trim(),token:$("#siCode").value.trim(),type:"email"});if(error)$("#siMsg").textContent="That code didn't work. Use the link in the email instead.";else location.reload();};
+$("#siCodeF").onsubmit=async e=>{e.preventDefault();const raw=$("#siCode").value.trim();const email=$("#siE").value.trim();let error=null;
+  try{
+    if(/^\d{6}$/.test(raw)){({error}=await SB.auth.verifyOtp({email,token:raw,type:"email"}));}
+    else{const u=new URL(raw);const q=new URLSearchParams(u.search+"&"+u.hash.replace(/^#/,""));
+      if(q.get("code")){({error}=await SB.auth.exchangeCodeForSession(q.get("code")));}
+      else if(q.get("token")){({error}=await SB.auth.verifyOtp({token_hash:q.get("token"),type:q.get("type")==="signup"?"signup":"email"}));}
+      else if(q.get("access_token")&&q.get("refresh_token")){({error}=await SB.auth.setSession({access_token:q.get("access_token"),refresh_token:q.get("refresh_token")}));}
+      else error={message:"no sign-in details in that link"};}
+  }catch(err){error=err;}
+  if(error)$("#siMsg").textContent="That didn't work ("+(error.message||"invalid link")+"). Request a new link and try again.";else location.replace(location.origin+location.pathname);};
 SB.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_IN"&&!S.db)location.reload();});
 }
-function showSignin(){$("#signin").hidden=false;$("#app").hidden=true;$("#topbar").hidden=true;}
+function showSafariHandoff(){const u=location.href;if(!/[?#&](code|access_token)=/.test(u))return;$("#siSafari").hidden=false;$("#siSafariUrl").value=u;$("#siCopy").onclick=async()=>{try{await navigator.clipboard.writeText(u);toast("Copied");}catch(e){$("#siSafariUrl").select();}};}
+function showSignin(){showSafariHandoff();$("#signin").hidden=false;$("#app").hidden=true;$("#topbar").hidden=true;}
 function hideSignin(){$("#signin").hidden=true;$("#app").hidden=false;$("#topbar").hidden=false;}
 
 const S={chat:[],weeks:{},runs:{},log:{},notes:[],settings:{vdot:52,goalMarathon:"2:57:00"},db:null,loaded:false};
