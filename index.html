@@ -218,7 +218,7 @@ async function sendChat(text){
 /* Forms */
 .field{display:grid;gap:7px;margin-top:14px}
 .field label,.flabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
-input[type=text],input[type=number],input[type=email],textarea,select{font:inherit;font-size:15px;color:var(--ink);background:var(--input);border:1px solid transparent;border-radius:10px;padding:10px 12px;width:100%}
+input[type=text],input[type=number],input[type=email],input[type=password],textarea,select{font:inherit;font-size:15px;color:var(--ink);background:var(--input);border:1px solid transparent;border-radius:10px;padding:10px 12px;width:100%}
 textarea{min-height:64px;resize:vertical}
 .scale{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px}
 .scale button{font-family:var(--mono);font-size:12px;padding:8px 0;border-radius:7px;background:var(--input);color:var(--ink2)}
@@ -273,7 +273,10 @@ textarea{min-height:64px;resize:vertical}
   <div class="top-in"><span class="mark" aria-hidden="true"></span><span class="brand">Magner Training</span><span class="sp"></span><span class="race" id="raceChip">Ballarat</span></div>
   <div class="navw"><nav class="nav" id="nav" aria-label="Sections"></nav></div>
 </header>
-<section class="signin" id="signin" hidden><div class="card pad"><span class="mark" aria-hidden="true" style="display:block;margin-bottom:14px"></span><div class="eb acc">Magner Training</div><h1 style="margin-top:6px">Sign in</h1><div class="lede">We email you a link. Open it on this phone and you stay signed in.</div><form id="siF"><div class="field"><label for="siE">Email</label><input id="siE" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com"></div><button class="btn block" style="margin-top:14px" id="siGo" type="submit">Email me a sign-in link</button></form><div class="sub" id="siMsg" style="margin-top:12px"></div><form id="siCodeF" hidden><div class="field"><label for="siCode">On iPhone: in the email, press and hold Log In, tap Copy Link, then paste it here</label><input id="siCode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste the link"></div><button class="btn block" style="margin-top:10px" type="submit">Sign in</button></form><div id="siSafari" hidden><div class="hr"></div><div class="eb acc">Opened in Safari</div><div class="sub" style="margin-top:6px">You can use the app right here in Safari. If you added it to your home screen, copy this and paste it into the app instead.</div><input id="siSafariUrl" type="text" readonly style="margin-top:10px"><button class="btn ghost block" id="siCopy" type="button" style="margin-top:10px">Copy</button></div></div></section>
+<section class="signin" id="signin" hidden><div class="card pad"><span class="mark" aria-hidden="true" style="display:block;margin-bottom:14px"></span><div class="eb acc">Magner Training</div><h1 style="margin-top:6px">Sign in</h1>
+<form id="siPwF"><div class="field"><label for="siE">Email</label><input id="siE" type="email" autocomplete="username" inputmode="email" required placeholder="you@example.com"></div><div class="field"><label for="siP">Password</label><input id="siP" type="password" autocomplete="current-password" placeholder="Your password"></div><button class="btn block" style="margin-top:14px" id="siPwGo" type="submit">Sign in</button></form>
+<div class="sub" id="siMsg" style="margin-top:12px"></div>
+<div class="hr"></div><div class="eb">First time, or no password yet</div><div class="sub" style="margin-top:6px">Tap below, then tap Log In in the email (don't press and hold). It opens in Safari, signs you in there and asks you to set a password. Then come back to the home screen app and sign in with it.</div><button class="btn ghost block" id="siLink" type="button" style="margin-top:10px">Email me a sign-in link</button></div></section>
 <main class="wrap" id="app"><div class="empty">Loading your plan</div></main>
 <div id="sheetRoot"></div>
 <div id="toastRoot"></div>
@@ -303,23 +306,26 @@ function makeDb(sb){
   };
 }
 function bindSignin(){
-$("#siF").onsubmit=async e=>{e.preventDefault();const email=$("#siE").value.trim();const b=$("#siGo");b.disabled=true;
+$("#siPwF").onsubmit=async e=>{e.preventDefault();const b=$("#siPwGo");b.disabled=true;
+  const {error}=await SB.auth.signInWithPassword({email:$("#siE").value.trim(),password:$("#siP").value});
+  b.disabled=false;if(error)$("#siMsg").textContent=/invalid/i.test(error.message)?"Email or password not right. No password yet? Use the sign-in link below first.":("Couldn't sign in: "+error.message);else location.reload();};
+$("#siLink").onclick=async()=>{const email=$("#siE").value.trim();if(!email){$("#siMsg").textContent="Enter your email first.";return;}
   const {error}=await SB.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
-  b.disabled=false;$("#siMsg").textContent=error?("Couldn't send: "+error.message):"Check your email for the sign-in link.";if(!error)$("#siCodeF").hidden=false;};
-$("#siCodeF").onsubmit=async e=>{e.preventDefault();const raw=$("#siCode").value.trim();const email=$("#siE").value.trim();let error=null;
-  try{
-    if(/^\d{6}$/.test(raw)){({error}=await SB.auth.verifyOtp({email,token:raw,type:"email"}));}
-    else{const u=new URL(raw);const q=new URLSearchParams(u.search+"&"+u.hash.replace(/^#/,""));
-      if(q.get("code")){({error}=await SB.auth.exchangeCodeForSession(q.get("code")));}
-      else if(q.get("token")){({error}=await SB.auth.verifyOtp({token_hash:q.get("token"),type:q.get("type")==="signup"?"signup":"email"}));}
-      else if(q.get("access_token")&&q.get("refresh_token")){({error}=await SB.auth.setSession({access_token:q.get("access_token"),refresh_token:q.get("refresh_token")}));}
-      else error={message:"no sign-in details in that link"};}
-  }catch(err){error=err;}
-  if(error)$("#siMsg").textContent="That didn't work ("+(error.message||"invalid link")+"). Request a new link and try again.";else location.replace(location.origin+location.pathname);};
+  $("#siMsg").textContent=error?("Couldn't send: "+error.message):"Sent. Tap Log In in the email.";};
 SB.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_IN"&&!S.db)location.reload();});
 }
-function showSafariHandoff(){const u=location.href;if(!/[?#&](code|access_token)=/.test(u))return;$("#siSafari").hidden=false;$("#siSafariUrl").value=u;$("#siCopy").onclick=async()=>{try{await navigator.clipboard.writeText(u);toast("Copied");}catch(e){$("#siSafariUrl").select();}};}
-function showSignin(){showSafariHandoff();$("#signin").hidden=false;$("#app").hidden=true;$("#topbar").hidden=true;}
+function passwordPrompt(){
+  let done=false;try{done=localStorage.getItem("mt-pw")==="1";}catch(e){}
+  const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+  if(done||standalone)return;
+  const box=document.createElement("section");box.className="card pad";box.style.margin="0 0 14px";box.id="pwBox";
+  box.innerHTML='<div class="eb acc">One more step</div><h2>Set a password for the app</h2><div class="sub" style="margin-top:4px">The home screen app keeps its own sign-in, separate from Safari. Set a password here, then sign in once in the app with your email and this password.</div><form id="pwF"><div class="field"><label for="pwN">New password</label><input id="pwN" type="password" autocomplete="new-password" minlength="8" required></div><button class="btn block" style="margin-top:12px" type="submit">Save password</button></form><button class="btn ghost" id="pwSkip" type="button" style="margin-top:10px">I already have one</button>';
+  $("#app").prepend(box);
+  $("#pwF").onsubmit=async e=>{e.preventDefault();const {error}=await SB.auth.updateUser({password:$("#pwN").value});
+    if(error){toast("Couldn't save: "+error.message);return;}try{localStorage.setItem("mt-pw","1");}catch(_){}box.remove();toast("Password saved. Now sign in from the home screen app.");};
+  $("#pwSkip").onclick=()=>{try{localStorage.setItem("mt-pw","1");}catch(_){}box.remove();};
+}
+function showSignin(){$("#signin").hidden=false;$("#app").hidden=true;$("#topbar").hidden=true;}
 function hideSignin(){$("#signin").hidden=true;$("#app").hidden=false;$("#topbar").hidden=false;}
 
 const S={chat:[],weeks:{},runs:{},log:{},notes:[],settings:{vdot:52,goalMarathon:"2:57:00"},db:null,loaded:false};
@@ -743,6 +749,7 @@ const TABS=[["today","Today"],["plan","Plan"],["fitness","Fitness"],["runs","Run
 function render(){
   const y=scrollY; const v={today:vToday,plan:vPlan,fitness:vFitness,runs:vRuns,coach:vCoach}[UI.tab]||vToday;
   $("#app").innerHTML=v();
+  if(S.db)passwordPrompt();
   $("#nav").innerHTML=TABS.map(t=>'<button type="button" data-tab="'+t[0]+'" aria-current="'+(UI.tab===t[0]?"page":"false")+'">'+t[1]+'</button>').join("");
   $("#raceChip").innerHTML='Ballarat <b>'+Math.max(0,dBetween(TODAY,RACE_DATE))+'d</b>';
   bind($("#app")); scrollTo(0,y);
