@@ -308,11 +308,10 @@ function makeDb(sb){
 function bindSignin(){
 $("#siPwF").onsubmit=async e=>{e.preventDefault();const b=$("#siPwGo");b.disabled=true;
   const {error}=await SB.auth.signInWithPassword({email:$("#siE").value.trim(),password:$("#siP").value});
-  b.disabled=false;if(error)$("#siMsg").textContent=/invalid/i.test(error.message)?"Email or password not right. No password yet? Use the sign-in link below first.":("Couldn't sign in: "+error.message);else location.reload();};
+  b.disabled=false;if(error)$("#siMsg").textContent=/invalid/i.test(error.message)?"Email or password not right. No password yet? Use the sign-in link below first.":("Couldn't sign in: "+error.message);else startData();};
 $("#siLink").onclick=async()=>{const email=$("#siE").value.trim();if(!email){$("#siMsg").textContent="Enter your email first.";return;}
   const {error}=await SB.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
   $("#siMsg").textContent=error?("Couldn't send: "+error.message):"Sent. Tap Log In in the email.";};
-SB.auth.onAuthStateChange((ev)=>{if(ev==="SIGNED_IN"&&!S.db)location.reload();});
 }
 function passwordPrompt(){
   let done=false;try{done=localStorage.getItem("mt-pw")==="1";}catch(e){}
@@ -780,11 +779,8 @@ function sched(){cancelAnimationFrame(rq);rq=requestAnimationFrame(()=>{if(typin
 document.addEventListener("focusout",()=>setTimeout(()=>{if(pend&&!typing()&&!$("#scrim"))sched();},60));
 new MutationObserver(()=>{if(pend&&!$("#scrim"))sched();}).observe($("#sheetRoot"),{childList:true});
 render();
-(async function boot(){
-  bindSignin();
-  const sess=(await SB.auth.getSession()).data.session;
-  if(!sess){showSignin();return;}
-  hideSignin();
+function startData(){
+  if(S.db)return; hideSignin();
   const db=makeDb(SB); S.db=db;
   db.collection("weeks").onSnapshot(s=>{S.weeks={};s.docs.forEach(d=>{if(d.exists)S.weeks[d.id]=d.data();});S.loaded=true;sched();},()=>{S.loaded=true;sched();});
   db.collection("runs").onSnapshot(s=>{S.runs={};s.docs.forEach(d=>{if(d.exists)S.runs[d.id]=d.data();});sched();},()=>{});
@@ -793,6 +789,12 @@ render();
   db.collection("chat").onSnapshot(s=>{S.chat=s.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()})).sort((a,b)=>String(a.ts||"").localeCompare(String(b.ts||"")));sched();},()=>{});
   db.doc("settings/main").onSnapshot(d=>{if(d.exists)S.settings={vdot:52,goalMarathon:"2:57:00",...d.data()};sched();},()=>{});
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")db.refresh();});
+}
+(async function boot(){
+  bindSignin();
+  SB.auth.onAuthStateChange((ev,session)=>{ if(session&&!S.db) setTimeout(startData,0); if(ev==="SIGNED_OUT"){ location.replace(location.origin+location.pathname); } });
+  const sess=(await SB.auth.getSession()).data.session;
+  if(sess) startData(); else if(!S.db) showSignin();
 })();
 })();
 </script>
