@@ -169,6 +169,16 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .defs{margin:8px 0 0}
 .defs dt{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-top:12px}
 .defs dd{margin:4px 0 0;font-size:14px;color:var(--ink2);line-height:1.5}
+.chiprow{display:inline-flex;flex-wrap:wrap;gap:4px 8px;margin-left:6px}
+.chipx{display:inline-flex;align-items:center;gap:4px;font-size:12px}
+.chipx i{width:7px;height:7px;border-radius:2px;display:inline-block}
+.wchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.wchip{display:inline-flex;align-items:center;gap:6px;background:var(--sunken);border-radius:999px;padding:5px 10px;font-family:var(--mono);font-size:12px;color:var(--ink2)}
+.wchip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.wchip b{font-family:var(--sans);font-weight:500;color:var(--ink)}
+.dk .wchip{background:var(--dark2);color:var(--on2)}
+.dk .wchip b{color:var(--on)}
+.wkday.focus{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px;text-transform:uppercase;letter-spacing:.05em}
 .dk .legend{color:var(--on3)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -393,7 +403,7 @@ function plannedDose(d){ // km per zone, estimated
 const weekList=()=>Object.values(S.weeks).sort((a,b)=>a.n-b.n);
 function dayIndex(){const m={};for(const w of weekList())for(const d of(w.days||[]))m[d.date]={w,d};return m;}
 function weekOf(date){let c=null;for(const w of weekList()){const e=addD(w.start,(w.days||[]).length-1);if(date>=w.start&&date<=e)c=w;}return c;}
-const isRun=r=>(r.sport||"run")==="run";
+const isRun=r=>r.sport?r.sport==="run":(!r.type||/run/i.test(r.type));
 const runsOn=date=>Object.values(S.runs).filter(r=>r.date===date&&isRun(r));
 const otherOn=date=>Object.values(S.runs).filter(r=>r.date===date&&!isRun(r));
 const kmOn=date=>runsOn(date).reduce((a,r)=>a+(+r.km||0),0);
@@ -431,7 +441,8 @@ function coachRead(d){
 /* Charts */
 function weekBars(w,dark){
   const days=(w.days||[]).length>7?w.days.slice(dayPos(w)):w.days;
-  const W=330,H=150,T=16,B=26; const max=Math.max(10,...days.map(d=>Math.max(+d.km||0,kmOn(d.date))))*1.1;
+  const anyKm=days.some(d=>(+d.km||0)>0||kmOn(d.date)>0);
+  const W=330,H=anyKm?164:62,T=anyKm?16:4,B=40; const max=Math.max(10,...days.map(d=>Math.max(+d.km||0,kmOn(d.date))))*1.1;
   const bw=W/7, y=v=>T+(H-T-B)*(1-v/max);
   let g="";
   days.forEach((d,i)=>{const x=i*bw+6,w2=bw-12,pk=+d.km||0,ak=kmOn(d.date),z=sessZone(d),st=status(d);
@@ -441,9 +452,12 @@ function weekBars(w,dark){
     if(ak)g+='<rect x="'+x+'" y="'+y(ak)+'" width="'+w2+'" height="'+(y(0)-y(ak))+'" rx="3" fill="'+(dark?"var(--on)":"var(--ink)")+'"/>';
     const lab=ak?ak.toFixed(1):pk?String(pk):"";
     if(lab)g+='<text x="'+(x+w2/2)+'" y="'+(y(Math.max(pk,ak))-5)+'" text-anchor="middle">'+lab+'</text>';
+    const ks=daySports(d.date); const n=ks.length, dw=7, gap=3, x0=x+w2/2-(n*dw+(n-1)*gap)/2;
+    ks.forEach((k,j)=>g+='<rect x="'+(x0+j*(dw+gap))+'" y="'+(y(0)+7)+'" width="'+dw+'" height="'+dw+'" rx="2" fill="'+SPORT_COL[k]+'"/>');
     g+='<text x="'+(x+w2/2)+'" y="'+(H-8)+'" text-anchor="middle" style="'+(d.date===TODAY?"fill:var(--accent);font-weight:600":"")+'">'+d.dow.slice(0,1)+'</text>';
+    g+='<rect data-wkday="'+d.date+'" x="'+(i*bw)+'" y="0" width="'+bw+'" height="'+H+'" fill="transparent" style="cursor:pointer"/>';
   });
-  return '<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Distance by day this week">'+g+'</svg>';
+  return '<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Distance by day this week, with other sessions marked below. Tap a day for detail.">'+g+'</svg>';
 }
 function dayPos(w){const i=w.days.findIndex(d=>d.date===(UI.sel||TODAY));return i<0?0:Math.floor(i/7)*7;}
 
@@ -492,9 +506,9 @@ function lineChart(points,opts){ // points [{x:date,y:secPerKm}] faster is up
 /* Views */
 function head(eb,title,lede){return '<div class="head"><div class="eb acc">'+eb+'</div><h1>'+esc(title)+'</h1>'+(lede?'<div class="lede">'+esc(lede)+'</div>':'')+'</div>';}
 function dayRow(d,dark){
-  const st=status(d), z=sessZone(d), dd=pISO(d.date), km=kmOn(d.date);
+  const st=(d.kind==="rest"&&!(+d.km))?"rest":status(d), z=sessZone(d), dd=pISO(d.date), km=kmOn(d.date);
   const s=st==="done"?'<span class="ok">Completed</span>'+(km?' · '+km.toFixed(1)+' km':''):st==="miss"?'<span class="miss">Missed</span>':st==="part"?'<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km':d.km?'Planned · '+d.km+' km':KLABEL[d.kind]||"";
-  return '<button class="day z-'+z+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(d.title)+'</div><div class="s">'+s+'</div></span><span class="r">›</span></button>';
+  return '<button class="day z-'+z+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(d.title)+'</div><div class="s">'+s+dayChips(d.date)+'</div></span><span class="r">›</span></button>';
 }
 function sessionCard(d,w,label){
   const z=sessZone(d), zone=z==="race"?null:zoneByKey(z==="x"?"st":z);
@@ -524,7 +538,7 @@ function vToday(){
   h+='</div><div class="stack">';
   const days7=w.days.length>7?w.days.slice(dayPos(w),dayPos(w)+7):w.days;
   h+='<section class="card pad"><div class="ch"><div><div class="eb">'+fD(days7[0].date)+' to '+fD(days7[days7.length-1].date)+'</div><h2>This week</h2></div><div class="mono" style="font-size:22px">'+A.toFixed(1)+'<span class="sub"> / '+Math.round(P)+' km</span></div></div>'+weekBars(w)+
-    '<div class="legend"><span><i style="background:var(--ink)"></i>Done</span><span>Colour = planned zone</span></div>'+
+    weekChips(days7.map(x=>x.date))+'<button class="btn ghost block" type="button" data-wkopen="'+days7[0].date+'" style="margin-top:12px">See the whole week <span aria-hidden="true">›</span></button>'+
     '<div class="metrics"><div class="m"><div class="k">Key sessions</div><div class="v">'+qd+'<small>/ '+qual.length+'</small></div></div><div class="m"><div class="k">Runs done</div><div class="v">'+w.days.filter(x=>+x.km&&status(x)==="done").length+'<small>/ '+w.days.filter(x=>+x.km).length+'</small></div></div><div class="m"><div class="k">Goal pace</div><div class="v">'+zoneText("GMP").replace("/km","")+'<small>/km</small></div></div><div class="m"><div class="k">Heat</div><div class="v">'+days7.reduce((a,x)=>a+(+((S.log[x.date]||{}).heatMin)||0),0)+'<small>min</small></div></div></div></section>';
   h+='<section><div class="days">'+days7.map(x=>dayRow(x)).join("")+'</div></section>';
   if(S.notes[0])h+='<section class="card pad"><div class="eb acc">From Claude · '+esc(S.notes[0].date?fD(S.notes[0].date):"")+'</div><h2>'+esc(S.notes[0].title||"")+'</h2><div class="prose"><p>'+esc((S.notes[0].body||"").split("\n")[0])+'</p></div><button class="btn ghost" style="margin-top:12px" data-tab="coach">All updates</button></section>';
@@ -663,6 +677,34 @@ function loadItems(date){
   }
   return items.filter(i=>i.tss>0||i.sec>0).sort((x,y)=>String(x.start).localeCompare(String(y.start)));
 }
+SPORT_COL.heat="var(--accent)"; SPORT_LBL.heat="Heat";
+function daySports(date){const ks=[...new Set(loadItems(date).map(a=>a.k).filter(k=>k!=="run"))].sort((a,b)=>SPORTS.indexOf(a)-SPORTS.indexOf(b));const l=S.log[date];if(l&&+l.heatMin>0)ks.push("heat");return ks;}
+function fHM(sec){const m=Math.round((sec||0)/60);return m>=60?Math.floor(m/60)+"h "+p2(m%60):m+"m";}
+function dayChips(date){const its=loadItems(date).filter(a=>a.k!=="run");const l=S.log[date]||{};const parts=its.map(a=>'<span class="chipx"><i style="background:'+SPORT_COL[a.k]+'"></i>'+SPORT_LBL[a.k]+' '+fHM(a.sec)+'</span>');if(+l.heatMin>0)parts.push('<span class="chipx"><i style="background:'+SPORT_COL.heat+'"></i>'+esc(l.heatType||"Heat")+' '+l.heatMin+'m</span>');return parts.length?'<span class="chiprow">'+parts.join("")+'</span>':"";}
+function weekTotals(dates){const t={};let heat=0;dates.forEach(d=>{loadItems(d).forEach(a=>{const s=(t[a.k]=t[a.k]||{n:0,sec:0,km:0,tss:0});s.n++;s.sec+=a.sec||0;s.km+=a.km||0;s.tss+=a.tss||0;});heat+=+((S.log[d]||{}).heatMin)||0;});return {t,heat};}
+function weekChips(dates){const {t,heat}=weekTotals(dates);
+  const c=SPORTS.filter(k=>t[k]).map(k=>'<span class="wchip"><i style="background:'+SPORT_COL[k]+'"></i><b>'+SPORT_LBL[k]+'</b>'+(k==="run"?t[k].km.toFixed(1)+' km':t[k].n+' · '+fHM(t[k].sec))+'</span>');
+  if(heat)c.push('<span class="wchip"><i style="background:'+SPORT_COL.heat+'"></i><b>Heat</b>'+heat+'m</span>');
+  return '<div class="wchips">'+(c.length?c.join(""):'<span class="sub">Nothing recorded yet this week.</span>')+'</div>';}
+function openWeekSheet(start,focus){
+  const dates=[0,1,2,3,4,5,6].map(i=>addD(start,i)).filter(d=>d<=addD(TODAY,7));
+  const {t,heat}=weekTotals(dates); const tot=Object.values(t).reduce((a,s)=>({n:a.n+s.n,sec:a.sec+s.sec,tss:a.tss+s.tss}),{n:0,sec:0,tss:0});
+  const idx=dayIndex();
+  let x='<div class="sheet-top"><span class="eb">'+fD(dates[0])+' to '+fD(addD(start,6))+'</span><button class="btn ghost" id="shX" type="button">Close</button></div>';
+  x+='<section class="dk pad"><h2 style="margin:0">The week</h2><div class="metrics"><div class="m"><div class="k">Run</div><div class="v">'+((t.run||{}).km||0).toFixed(1)+'<small>km</small></div></div><div class="m"><div class="k">Sessions</div><div class="v">'+tot.n+'</div></div><div class="m"><div class="k">Time</div><div class="v">'+fHM(tot.sec)+'</div></div><div class="m"><div class="k">Load</div><div class="v">'+Math.round(tot.tss)+'<small>TSS</small></div></div></div>'+
+     (tot.n?'<table class="tbl" style="margin-top:12px"><tbody>'+SPORTS.filter(k=>t[k]).map(k=>'<tr><td><span class="dotk" style="background:'+SPORT_COL[k]+'"></span>'+SPORT_LBL[k]+'<div class="sub">'+t[k].n+' session'+(t[k].n>1?'s':'')+' · '+fHM(t[k].sec)+(t[k].km>0&&k!=="gym"?' · '+t[k].km.toFixed(1)+' km':'')+'</div></td><td class="r mono">'+Math.round(t[k].tss)+'<div class="sub">TSS</div></td></tr>').join("")+(heat?'<tr><td><span class="dotk" style="background:'+SPORT_COL.heat+'"></span>Heat<div class="sub">'+heat+' min sauna or steam</div></td><td class="r mono">·</td></tr>':'')+'</tbody></table>':'')+'</section>';
+  dates.forEach(d=>{const its=loadItems(d), l=S.log[d]||{}, it=idx[d];
+    x+='<section class="card pad wkday" id="wk-'+d+'" style="margin-top:12px"><div class="ch" style="align-items:baseline"><div><div class="eb'+(d===TODAY?' acc':'')+'">'+(d===TODAY?'Today · ':'')+fD(d,true)+'</div><h2 style="font-size:18px">'+esc(it?it.d.title:"")+'</h2></div><div class="mono sub">'+(its.length?Math.round(its.reduce((a,b)=>a+b.tss,0))+' TSS':'')+'</div></div>';
+    if(!its.length&&!+l.heatMin&&!l.lifts)x+='<div class="sub" style="margin-top:6px">'+(d>TODAY?'Coming up'+(it&&it.d.km?' · '+it.d.km+' km planned':''):'Nothing recorded')+'</div>';
+    x+='<div class="acts">'+its.map(a=>'<div class="act"><span class="dotk" style="background:'+SPORT_COL[a.k]+'"></span><span class="act-a"><b>'+esc(a.title)+'</b><span class="sub">'+SPORT_LBL[a.k]+' · '+fHM(a.sec)+(a.run&&a.km>0?' · '+a.km.toFixed(2)+' km · '+fP(a.sec/a.km)+'/km':(a.km>0&&a.k!=="gym"?' · '+a.km.toFixed(1)+' km':''))+(a.hr?' · '+Math.round(a.hr)+' bpm':'')+'</span></span><span class="act-n"><b>'+Math.round(a.tss)+'</b><span class="sub">TSS</span></span></div>').join("")+'</div>';
+    const extra=[]; if(+l.heatMin>0)extra.push(esc(l.heatType||"Heat")+' '+l.heatMin+' min'); if(l.lifts)extra.push('Lifts: '+esc(l.lifts)); if(l.foot!=null)extra.push('Foot '+l.foot+'/6'); if(l.weight)extra.push(l.weight+' kg'); (l.niggles||[]).forEach(n=>extra.push(esc(n.area)+' '+esc(n.side||"")+' '+n.score+'/10')); if(l.note)extra.push(esc(l.note));
+    if(extra.length)x+='<div class="sub" style="margin-top:8px;line-height:1.5">'+extra.join(' · ')+'</div>';
+    x+='<button class="btn ghost" type="button" data-wklog="'+d+'" style="margin-top:10px">'+(d>TODAY?'View session':'Open log')+'</button></section>';});
+  $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Week detail">'+x+'</div></div>';
+  $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
+  document.querySelectorAll("#sheetRoot [data-wklog]").forEach(b=>b.onclick=()=>{closeSheet();openDay(b.dataset.wklog);});
+  if(focus){const el=document.getElementById("wk-"+focus); if(el){el.classList.add("focus"); if(focus!==dates[0]) setTimeout(()=>el.scrollIntoView({block:"start"}),30);}}
+}
 function loadSvg(ser,id,H){
   H=H||230; const W=640,L=34,R=34,T=14,B=24, now=ser[ser.length-1];
   const maxY=Math.max(60,...ser.map(p=>Math.max(p.ctl,p.atl)))*1.1, tsbMin=Math.min(-30,...ser.map(p=>p.tsb)), tsbMax=Math.max(25,...ser.map(p=>p.tsb));
@@ -694,15 +736,36 @@ function bindScrub(svg,onPick,onTap){
   svg.addEventListener("pointerup",e=>{const i=idx(e);down=null;if(!moved&&onTap)onTap(G.ser[i]);});
   svg.addEventListener("pointercancel",()=>{down=null;});
 }
+function loadWeekSvg(all,win){
+  const nW=win===56?8:win===112?16:52; const wk={};
+  all.forEach(p=>{const m=monOf(p.d);const w=(wk[m]=wk[m]||{m,t:0,by:{},end:p});w.t+=p.t;SPORTS.forEach(k=>w.by[k]=(w.by[k]||0)+(p.by[k]||0));w.end=p;});
+  const ws=Object.values(wk).sort((a,b)=>a.m.localeCompare(b.m)).slice(-nW);
+  const W=640,H=230,L=34,R=34,T=14,B=24, maxY=Math.max(300,...ws.map(w=>Math.max(w.t,w.end.ctl*7)))*1.1;
+  const bw=(W-L-R)/ws.length, X=i=>L+bw*i+bw/2, Y=v=>T+(H-T-B)*(1-v/maxY);
+  let g='';
+  [0.25,0.5,0.75].forEach(f=>{const v=Math.round(maxY*f/50)*50;g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--dline)"/><text x="'+(L-6)+'" y="'+(Y(v)+3)+'" text-anchor="end">'+v+'</text><text x="'+(W-R+6)+'" y="'+(Y(v)+3)+'">'+Math.round(v/7)+'</text>';});
+  ws.forEach((w,i)=>{let acc=0;const x=X(i)-Math.max(2,bw*.62)/2, ww=Math.max(2,bw*.62);
+    SPORTS.forEach(k=>{const v=w.by[k]||0;if(!v)return;const hh=Y(0)-Y(v);g+='<rect x="'+x+'" y="'+(Y(0)-acc-hh)+'" width="'+ww+'" height="'+hh+'" fill="'+SPORT_COL[k]+'" opacity=".8"/>';acc+=hh;});
+    if(nW<=16&&w.t)g+='<text x="'+X(i)+'" y="'+(Y(w.t)-4)+'" text-anchor="middle">'+Math.round(w.t)+'</text>';});
+  g+='<path d="'+ws.map((w,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(w.end.ctl*7).toFixed(1)).join(' ')+'" fill="none" stroke="var(--on)" stroke-width="2.2" stroke-linejoin="round"/>';
+  ws.forEach((w,i)=>g+='<circle cx="'+X(i)+'" cy="'+Y(w.end.ctl*7)+'" r="2.6" fill="var(--on)"/>');
+  g+='<text x="'+L+'" y="'+(H-6)+'">'+fD(ws[0].m)+'</text><text x="'+(W-R)+'" y="'+(H-6)+'" text-anchor="end">This week</text>';
+  ws.forEach((w,i)=>g+='<rect data-ldweek="'+w.end.d+'" x="'+(L+bw*i)+'" y="0" width="'+bw+'" height="'+H+'" fill="transparent" style="cursor:pointer"/>');
+  const last=ws[ws.length-1], prev=ws[ws.length-2];
+  return '<div class="lro"><b>This week</b><span>'+Math.round(last.t)+' TSS so far</span>'+(prev?'<span>Last week '+Math.round(prev.t)+'</span>':'')+'<span>Fitness '+Math.round(last.end.ctl)+'</span></div>'+
+    '<svg class="bars" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Weekly training load by sport, with fitness line. Tap a week for detail.">'+g+'</svg>'+
+    '<div class="sub" style="margin-top:4px;color:var(--on3);font-size:12px">Bars are weekly load (left axis). The line is fitness (right axis): hold a week at 7 times your fitness and fitness stays level.</div>';
+}
 function loadCard(){
   const all=pmc(400); if(!all.length)return "";
   const win=UI.loadWin||112, ser=all.slice(-win), now=all[all.length-1], wk=all[Math.max(0,all.length-8)];
   const [fl,fc]=formLabel(now.tsb); const dC=now.ctl-wk.ctl;
   const wkT=all.slice(-7).reduce((a,p)=>a+p.t,0);
-  return '<section class="dk pad span2" style="margin-bottom:14px"><div class="ch"><div><div class="eb">00 · Training load</div><h2>Fitness, fatigue and form</h2><div class="lede">Every Strava activity scored for stress: runs, rides, swims and gym. Drag across the chart to scrub, tap a day to drill in.</div></div><div class="seg" role="group" aria-label="Range">'+[[56,"8W"],[112,"16W"],[365,"1Y"]].map(o=>'<button data-loadwin="'+o[0]+'" aria-pressed="'+(win===o[0])+'">'+o[1]+'</button>').join("")+'</div></div>'+
+  return '<section class="dk pad span2" style="margin-bottom:14px"><div class="ch"><div><div class="eb">00 · Training load</div><h2>Fitness, fatigue and form</h2><div class="lede">Every Strava activity scored for stress: runs, rides, swims and gym. Drag across the chart to scrub, tap a day or week to drill in.</div></div><div class="seg" role="group" aria-label="Range">'+[[56,"8W"],[112,"16W"],[365,"1Y"]].map(o=>'<button data-loadwin="'+o[0]+'" aria-pressed="'+(win===o[0])+'">'+o[1]+'</button>').join("")+'</div></div>'+
    '<div class="metrics"><div class="m"><div class="k">Fitness (CTL)</div><div class="v">'+Math.round(now.ctl)+'<small>'+(dC>=0?"+":"")+dC.toFixed(1)+' /wk</small></div></div><div class="m"><div class="k">Fatigue (ATL)</div><div class="v">'+Math.round(now.atl)+'</div></div><div class="m"><div class="k">Form (TSB)</div><div class="v">'+(now.tsb>0?"+":"")+Math.round(now.tsb)+'<small class="'+fc+'" style="color:inherit">'+fl+'</small></div></div><div class="m"><div class="k">Load 7 days</div><div class="v">'+Math.round(wkT)+'<small>TSS</small></div></div></div>'+
-   '<div class="lro" id="lcRO">'+loadRO(now)+'</div>'+loadSvg(ser,"lcSvg")+
-   '<div class="legend"><span><i style="background:var(--on)"></i>Fitness</span><span><i style="background:var(--z-mp)"></i>Fatigue</span><span><i style="background:var(--accent);opacity:.5"></i>Form</span>'+["run","bike","swim","gym"].map(k=>'<span><i style="background:'+SPORT_COL[k]+';opacity:.6"></i>'+SPORT_LBL[k]+'</span>').join("")+'</div>'+
+   '<div class="seg" role="group" aria-label="View" style="margin-top:16px">'+[["day","Daily"],["week","Weekly"]].map(o=>'<button data-loadmode="'+o[0]+'" aria-pressed="'+((UI.loadMode||"day")===o[0])+'">'+o[1]+'</button>').join("")+'</div>'+
+   ((UI.loadMode||"day")==="week"?loadWeekSvg(all,win):'<div class="lro" id="lcRO">'+loadRO(now)+'</div>'+loadSvg(ser,"lcSvg"))+
+   '<div class="legend"><span><i style="background:var(--on)"></i>Fitness</span>'+((UI.loadMode||"day")==="week"?'':'<span><i style="background:var(--z-mp)"></i>Fatigue</span><span><i style="background:var(--accent);opacity:.5"></i>Form</span>')+["run","bike","swim","gym"].map(k=>'<span><i style="background:'+SPORT_COL[k]+';opacity:.6"></i>'+SPORT_LBL[k]+'</span>').join("")+'</div>'+
    '<button class="btn ghost block" type="button" data-loadopen="'+TODAY+'" style="margin-top:12px">Open the breakdown <span aria-hidden="true">›</span></button>'+
    '<div class="coach" style="margin-top:14px"><span class="eb">Read</span><span>'+loadRead(all,now,dC)+'</span></div></section>';
 }
@@ -943,6 +1006,10 @@ function bind(r){
   if(cf){const box=$("#chat",r);box.scrollTop=box.scrollHeight;cf.onsubmit=e=>{e.preventDefault();sendChat($("#chatIn",r).value.trim());};
     $("#chatIn",r).onkeydown=e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))cf.requestSubmit();};}
   r.querySelectorAll("[data-loadwin]").forEach(b=>b.onclick=()=>{UI.loadWin=+b.dataset.loadwin;render();});
+  r.querySelectorAll("[data-loadmode]").forEach(b=>b.onclick=()=>{UI.loadMode=b.dataset.loadmode;render();});
+  r.querySelectorAll("[data-ldweek]").forEach(b=>b.onclick=()=>openLoad(b.dataset.ldweek));
+  r.querySelectorAll("[data-wkday]").forEach(b=>b.onclick=()=>openWeekSheet(monOf(b.dataset.wkday),b.dataset.wkday));
+  r.querySelectorAll("[data-wkopen]").forEach(b=>b.onclick=()=>openWeekSheet(monOf(b.dataset.wkopen)));
   r.querySelectorAll("[data-loadopen]").forEach(b=>b.onclick=()=>openLoad(b.dataset.loadopen));
   {const s=r.querySelector("#lcSvg"); if(s)bindScrub(s,p=>{const ro=r.querySelector("#lcRO");if(ro)ro.innerHTML=loadRO(p);},p=>openLoad(p.d));}
   r.querySelectorAll("[data-recipe]").forEach(b=>b.onclick=()=>{UI.recipe=+b.dataset.recipe;render();});
