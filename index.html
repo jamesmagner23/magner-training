@@ -305,6 +305,11 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .pc-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:10px 0;border-top:1px solid var(--line);text-align:left;color:inherit}
 .pc-a{display:flex;flex-direction:column;min-width:0}.pc-a b{font-weight:500}
 .tone{width:8px;height:8px;border-radius:50%;background:var(--line2)}.tone.good{background:var(--good)}.tone.warn{background:var(--warn)}.tone.bad{background:var(--bad)}
+.donecard{border-color:color-mix(in srgb,var(--good) 35%,var(--line))}
+.donetag{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent);border-radius:999px;padding:3px 10px}
+.done-t{font-size:20px;font-weight:500;margin-top:6px}
+.done-m{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:13px;color:var(--ink2)}
+.done-m b{font-size:18px;color:var(--ink);font-weight:500}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px;text-transform:uppercase;letter-spacing:.05em}
 .dk .legend{color:var(--on3)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -649,6 +654,15 @@ function sessionCard(d,w,label){
     '<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" data-log="'+d.date+'">Log session</button>'+(tplFromPlan(d)&&d.date<=TODAY?'<button class="btn ghost" data-liftstart="'+tplFromPlan(d)+'">Log gym</button>':'')+(UI.tab!=="today"?'':'<button class="btn ghost" data-tab="plan">Full plan</button>')+'</div></section>';
 }
 
+function doneCard(d){
+  const rs=Object.values(S.runs).filter(r=>r.date===d.date&&isRun(r)), km=rs.reduce((a,r)=>a+(+r.km||0),0), sec=rs.reduce((a,r)=>a+(+r.sec||0),0);
+  const hr=rs.length?Math.round(rs.reduce((a,r)=>a+(+r.avgHr||0)*(+r.sec||0),0)/Math.max(1,sec)):0; const a=rs[0]?analyseRun(rs[0],d):null;
+  const others=Object.values(S.runs).filter(r=>r.date===d.date&&!isRun(r));
+  return '<section class="card pad donecard"><div class="ch"><span class="eb">Today · '+fD(d.date,true)+'</span><span class="donetag">Done ✓</span></div>'+
+    '<div class="done-t">'+esc(d.title)+(a&&a.tone?' <span class="vchip tone-'+a.tone+'">'+esc(a.head)+'</span>':'')+'</div>'+
+    (km?'<div class="done-m mono"><span><b>'+km.toFixed(1)+'</b> km</span><span><b>'+fP(sec/km)+'</b> /km</span>'+(hr?'<span><b>'+hr+'</b> bpm</span>':'')+'<span><b>'+fHM(sec)+'</b></span></div>':'')+
+    (others.length?'<div class="sub" style="margin-top:6px">Also: '+others.map(o=>esc(SPORT_LBL[sportKind(o)]||o.type)+' '+fHM(o.sec)).join(", ")+'</div>':'')+
+    '<button class="linkrow" type="button" data-day="'+d.date+'"><span>Session details</span><span aria-hidden="true">›</span></button></section>';}
 function vToday(){
   const ws=weekList(); if(!ws.length)return head("Today","Today")+'<div class="card pad"><div class="empty">'+(S.loaded?"No plan loaded yet.":"Loading your plan")+'</div></div>';
   const idx=dayIndex(); let date=UI.sel&&idx[UI.sel]?UI.sel:TODAY; let w=weekOf(date);
@@ -659,8 +673,12 @@ function vToday(){
   const next=w.days.find(x=>x.date>=TODAY&&["threshold","quality","marathon","race","long"].includes(x.kind)&&status(x)!=="done");
   const total=weekList().length-1;
   let h=head("Week "+w.n+" of "+total+" · "+esc(w.phase),date===TODAY?"Today":fD(date,true),w.focus);
-  h+='<div class="cols two"><div class="stack">'+sessionCard(d,w,date===TODAY?"Today":"Selected");
-  if(next&&next.date!==d.date)h+='<section class="card pad z-'+sessZone(next)+'" style="border-left:3px solid var(--zc)"><div class="eb acc">Next key session · '+fD(next.date,true)+'</div><h2>'+esc(next.title)+'</h2><div class="sub mono" style="margin-top:4px">'+next.km+' km</div><button class="btn ghost" style="margin-top:12px" data-day="'+next.date+'">View session</button></section>';
+  let hero=sessionCard(d,w,date===TODAY?"Today":"Selected"), heroDate=null;
+  if(date===TODAY&&!UI.sel&&(+d.km||d.kind==="cross")&&status(d)==="done"){
+    const nx=Object.values(idx).map(x=>x.d).filter(x=>x.date>TODAY&&(+x.km||["cross","strength"].includes(x.kind))).sort((a,b)=>a.date.localeCompare(b.date))[0];
+    heroDate=nx?nx.date:null;hero=doneCard(d)+(nx?sessionCard(nx,weekOf(nx.date),nx.date===addD(TODAY,1)?"Tomorrow":"Next up"):"");}
+  h+='<div class="cols two"><div class="stack">'+hero;
+  if(next&&next.date!==d.date&&next.date!==heroDate)h+='<section class="card pad z-'+sessZone(next)+'" style="border-left:3px solid var(--zc)"><div class="eb acc">Next key session · '+fD(next.date,true)+'</div><h2>'+esc(next.title)+'</h2><div class="sub mono" style="margin-top:4px">'+next.km+' km</div><button class="btn ghost" style="margin-top:12px" data-day="'+next.date+'">View session</button></section>';
   h+='</div><div class="stack">';
   const days7=w.days.length>7?w.days.slice(dayPos(w),dayPos(w)+7):w.days;
   {const dts=days7.map(x=>x.date); const {t}=weekTotals(dts); const tot=Object.values(t).reduce((q,s2)=>({n:q.n+s2.n,sec:q.sec+s2.sec,tss:q.tss+s2.tss}),{n:0,sec:0,tss:0}); const runWeek=P>0||A>0; const ft=lastFoot(dts);
