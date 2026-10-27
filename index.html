@@ -275,6 +275,31 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .pick b{font-weight:500}.pick span{font-size:12px;color:var(--ink3)}
 .lg-rest{position:sticky;bottom:10px;margin:14px auto 0;width:max-content;display:flex;gap:12px;align-items:center;background:var(--dark);color:var(--on);border-radius:999px;padding:10px 16px;font-family:var(--mono);box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .lg-rest b{font-size:18px}.lg-rest button{color:var(--on2);font-size:13px}
+.drag{display:flex;align-items:center;justify-content:center;width:34px;height:44px;margin-right:-6px;color:var(--ink3);font-size:15px;letter-spacing:-2px;touch-action:none;cursor:grab;border-radius:8px}
+.drag:active{background:var(--sunken);cursor:grabbing}
+.drag-ghost{box-shadow:0 12px 30px rgba(0,0,0,.28);opacity:.95;transform:scale(1.02)}
+.drag-src{opacity:.35}
+.drag-over{outline:2px dashed var(--accent);outline-offset:2px}
+.drag-bad{outline-color:var(--bad)}
+.toast button{margin-left:10px;color:var(--accent);font-weight:600}
+.vchip{display:inline-block;margin-left:6px;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--sunken);white-space:nowrap}
+.tone-good{color:var(--good)}.tone-warn{color:var(--warn)}.tone-bad{color:var(--bad)}
+.vchip.tone-good{background:color-mix(in srgb,var(--good) 14%,transparent)}.vchip.tone-warn{background:color-mix(in srgb,var(--warn) 16%,transparent)}.vchip.tone-bad{background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.movechips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
+.movechips .eb{margin-right:4px}
+.movechips button{font-size:13px;padding:6px 10px;border-radius:999px;background:var(--sunken);color:var(--ink)}
+.sc-grid{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px 14px;margin-top:12px;align-items:baseline}
+.sc-grid .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.sc-grid .mono{font-size:15px}
+.pc-v{font-size:14px;white-space:nowrap}.pc-v span{color:var(--accent)}
+.pacecard.chg{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.pc-tbl{display:grid;gap:6px;margin-top:12px}
+.pc-tbl div{display:grid;grid-template-columns:90px 1fr 1fr;gap:10px;font-size:13px}
+.pc-tbl div span:last-child{color:var(--accent)}
+.pc-list{margin-top:12px}
+.pc-row{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;padding:10px 0;border-top:1px solid var(--line);text-align:left;color:inherit}
+.pc-a{display:flex;flex-direction:column;min-width:0}.pc-a b{font-weight:500}
+.tone{width:8px;height:8px;border-radius:50%;background:var(--line2)}.tone.good{background:var(--good)}.tone.warn{background:var(--warn)}.tone.bad{background:var(--bad)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:8px;text-transform:uppercase;letter-spacing:.05em}
 .dk .legend{color:var(--on3)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
@@ -604,7 +629,7 @@ function head(eb,title,lede){return '<div class="head"><div class="eb acc">'+eb+
 function dayRow(d,dark){
   const st=(d.kind==="rest"&&!(+d.km))?"rest":status(d), z=sessZone(d), dd=pISO(d.date), km=kmOn(d.date);
   const s=st==="done"?'<span class="ok">Completed</span>'+(km?' · '+km.toFixed(1)+' km':''):st==="miss"?'<span class="miss">Missed</span>':st==="part"?'<span class="part">Partial</span> · '+km.toFixed(1)+' of '+d.km+' km':d.km?'Planned · '+d.km+' km':KLABEL[d.kind]||"";
-  return '<button class="day z-'+z+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(d.title)+'</div><div class="s">'+s+dayChips(d.date)+'</div></span><span class="r">›</span></button>';
+  return '<button class="day z-'+z+(st==="done"?' done':'')+(d.date===TODAY?' today':'')+'" data-day="'+d.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(d.title)+'</div><div class="s">'+s+dayChips(d.date)+verdictChip(d.date)+'</div></span>'+(d.date>=TODAY&&!canMove(d.date,d.date+"x")?'<span class="drag" data-drag aria-label="Drag to move this session" title="Drag to move">⋮⋮</span>':'<span class="r">›</span>')+'</button>';
 }
 function sessionCard(d,w,label){
   const z=sessZone(d), zone=z==="race"?null:zoneByKey(z==="x"?"st":z);
@@ -642,6 +667,7 @@ function vToday(){
     (ft?'<div class="m"><div class="k">Foot · '+fD(ft.d)+'</div><div class="v" style="color:'+(ft.v>=4?'var(--bad)':ft.v>=2?'var(--warn)':'var(--good)')+'">'+ft.v+'<small>/ 6</small></div></div>':(runWeek?'':'<div class="m"><div class="k">Run</div><div class="v">0<small>km</small></div></div>'))+
     '</div><button class="linkrow" type="button" data-wkopen="'+days7[0].date+'"><span>Week detail</span><span aria-hidden="true">›</span></button></section>';}
   h+='<section><div class="days">'+days7.map(x=>dayRow(x)).join("")+'</div></section>';
+  h+=paceCard(true);
   if(S.notes[0])h+='<section class="card pad"><div class="eb acc">From Claude · '+esc(S.notes[0].date?fD(S.notes[0].date):"")+'</div><h2>'+esc(S.notes[0].title||"")+'</h2><div class="prose"><p>'+esc((S.notes[0].body||"").split("\n")[0])+'</p></div><button class="btn ghost" style="margin-top:12px" data-tab="coach">All updates</button></section>';
   h+='</div></div>';
   return h;
@@ -666,6 +692,7 @@ function vFitness(){
   const v=+S.settings.vdot||52, Z=ZONES(), gv=goalVdot();
   let h=head("Understand your fitness","Where your running is","Zones are set from your training VDOT and your threshold heart rate. They move as your races and runs come in.");
   h+=loadCard();
+  h+=paceCard(false);
   h+='<div class="cols two"><div class="stack">';
   h+='<section class="card pad"><div class="ch"><div><div class="eb">01 · What you are doing</div><h2>Current recipe</h2><div class="sub">Minutes per week in each zone, by average pace</div></div><div class="seg" role="group" aria-label="Range">'+[1,4,8].map(n=>'<button data-recipe="'+n+'" aria-pressed="'+(UI.recipe===n)+'">'+n+'W</button>').join("")+'</div></div>'+recipe(UI.recipe)+'</section>';
   // pace at comparable effort
@@ -835,6 +862,7 @@ function openWeekSheet(start,focus){
       x+='<button type="button" class="wkd-slim'+(d===TODAY?' today':'')+'" id="wk-'+d+'" data-wklog="'+d+'"><span class="wkd-date">'+lab+'</span><span class="wkd-t">'+esc(pl?pl.title:"")+'<span class="sub">'+(d>TODAY?'Coming up':'Nothing recorded')+(planLine?' · '+planLine:'')+'</span></span><span class="r">›</span></button>';return;}
     x+='<div class="wkd'+(d===TODAY?' today':'')+'" id="wk-'+d+'"><button type="button" class="wkd-head" data-wklog="'+d+'"><span class="wkd-date">'+lab+'</span><span class="wkd-t">'+esc(pl?pl.title:"Activity")+(planLine?'<span class="sub">'+planLine+'</span>':'')+'</span><span class="wkd-n">'+(its.length?Math.round(its.reduce((a,b)=>a+b.tss,0))+'<small> TSS</small>':'')+'</span><span class="r">›</span></button>';
     if(its.length)x+='<div class="acts">'+its.map(a=>'<div class="act"><span class="dotk" style="background:'+SPORT_COL[a.k]+'"></span><span class="act-a"><b>'+esc(a.title)+'</b><span class="sub">'+fHM(a.sec)+(a.run&&a.km>0?' · '+a.km.toFixed(2)+' km · '+fP(a.sec/a.km)+'/km':(a.km>0&&a.k!=="gym"?' · '+a.km.toFixed(1)+' km':''))+(a.hr?' · '+Math.round(a.hr)+' bpm':'')+'</span></span><span class="act-n"><b>'+Math.round(a.tss)+'</b></span></div>').join("")+'</div>';
+    {const vc=verdictChip(d);if(vc)x+='<div class="wkd-tags">'+vc+'</div>';}
     x+=liftsOn(d).map(L=>{const st=sessStats(L);return '<button type="button" class="liftlink" data-liftopen="'+L.id+'"><b>'+esc(L.name||"Gym session")+'</b><span>'+fT(st.t)+' · '+st.sets+' sets</span><span>›</span></button>';}).join("");
     if(extra.length)x+='<div class="wkd-tags">'+extra.map(e=>'<span>'+e+'</span>').join("")+'</div>';
     if(l.lifts)x+='<div class="sub" style="margin-top:6px">'+esc(l.lifts)+'</div>';
@@ -1057,7 +1085,9 @@ function openDay(date){
   let x='<div class="sheet-top"><span class="eb">'+fD(date,true)+'</span><button class="btn ghost" id="shX" type="button">Close</button></div>';
   if(it)x+=sessionCard(it.d,it.w,"Session").replace(/<button class="btn" data-log[^>]*>Log session<\/button>/,"");
   const rs=runsOn(date);
+  x+=moveChips(date);
   if(rs.length||others.length)x+='<section class="card pad" style="margin-top:12px"><div class="eb">Recorded</div>'+rs.concat(others).map(r=>'<div style="display:flex;justify-content:space-between;gap:10px;margin-top:8px"><span>'+esc(r.title||r.type||"Activity")+'</span><span class="mono sub">'+(isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km':fDur(r.sec))+(r.avgHr?' · '+Math.round(r.avgHr)+' bpm':'')+'</span></div>').join("")+'</section>';
+  x+=sessionCheckHtml(date);
   x+='<form class="card pad" id="lf" style="margin-top:12px"><div class="eb">Morning check</div><div class="field"><label for="lfW">Weight (kg), after waking, before food</label><input id="lfW" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 89.4" value="'+(lg.weight||"")+'"></div><div class="hr"></div><div class="eb">Run</div>'+
     '<div class="sw-row"><span>Completed</span><button type="button" class="tog" role="switch" id="lfDone" aria-checked="'+(!!lg.done)+'" aria-label="Run completed"></button></div>'+
     '<div class="field"><label for="lfShoe">Shoes</label><input id="lfShoe" type="text" list="shoeList" placeholder="Pick or type a pair" value="'+esc(lg.shoe||"")+'"><datalist id="shoeList">'+shoeNames().map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist></div>'+
@@ -1076,6 +1106,7 @@ function openDay(date){
     '<button class="btn block" style="margin-top:16px" id="lfSave" type="submit">Save</button></form>';
   $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="'+fD(date,true)+'">'+x+'</div></div>';
   $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
+  document.querySelectorAll("#sheetRoot [data-moveto]").forEach(b=>b.onclick=async()=>{closeSheet();await swapDays(b.dataset.movefrom,b.dataset.moveto);});
   document.querySelectorAll("#sheetRoot [data-liftopen]").forEach(b=>b.onclick=()=>openLift(b.dataset.liftopen));
   document.querySelectorAll("#sheetRoot [data-liftstart]").forEach(b=>b.onclick=()=>{const dr=gymDraft();const L=dr||newSession(b.dataset.liftstart);if(!dr)L.date=date;openLogger(L);});
   const f=$("#lf"), st={...lg};
@@ -1132,6 +1163,148 @@ async function importFiles(files){if(!S.db){toast("Importing is unavailable righ
     const id=(r.start||r.date).replace(/[^0-9A-Za-z]/g,"")+"-"+(r.sport==="run"?Math.round(r.km*10):"x"+Math.round(r.sec/60));r.imported=new Date().toISOString();
     try{await S.db.collection("runs").doc(id).set(r);ok++;}catch(e){if(e&&e.code==="quota_exceeded"){toast("Storage is full.");return;}}}
   toast(ok+" imported");}
+
+/* ===================== Session check + pace review ===================== */
+function goalMP(){return (pDur(S.settings.goalMarathon)||10620)/42.195;}
+function targetsFor(d,v){
+  v=v||+S.settings.vdot||52; const L=+S.settings.lthr||167;
+  const eF=paceF(.70,v), eS=paceF(.62,v), T=paceF(.88,v), I=paceF(.98,v), R=paceF(1.07,v), M=goalMP();
+  const det=d&&d.detail||"", k=d&&d.kind;
+  if(!d||!(+d.km)||["rest","cross","strength"].includes(k))return null;
+  if(k==="race")return {type:"race"};
+  if(k==="threshold"&&!/\{T\}/.test(det)&&/half marathon pace/i.test(det))return {type:"work",name:"Half marathon pace",pace:(T+M)/2,tol:.025,hr:[L*.92,L*.98],ez:[eF,eS],cap:L*.89};
+  if(k==="threshold")return {type:"work",name:"Threshold",pace:T,tol:.02,hr:[L*.93,L*1.0],ez:[eF,eS],cap:L*.89};
+  if(k==="quality"&&/\{R\}/.test(det))return {type:"work",name:"Speed reps",pace:R,tol:.03,hr:null,ez:[eF,eS],cap:L*.89};
+  if(k==="quality"&&/\{I\}/.test(det))return {type:"work",name:"VO2 intervals",pace:I,tol:.025,hr:[L*.97,L*1.06],ez:[eF,eS],cap:L*.89};
+  if(k==="quality")return {type:"work",name:"Intervals",pace:(T+I)/2,tol:.03,hr:null,ez:[eF,eS],cap:L*.89};
+  if(k==="marathon"||(k==="long"&&/\{GMP\}/.test(det)))return {type:"work",name:"Marathon pace",pace:M,tol:.015,hr:[L*.88,L*.95],ez:[eF,eS],cap:L*.89,long:k==="long"};
+  if(k==="recovery")return {type:"easy",name:"Recovery",band:[eS,eS*1.12],cap:L*.81,soft:L*.85};
+  return {type:"easy",name:k==="long"?"Long easy":"Easy",band:[eF,eS],cap:L*.89,soft:L*.91,long:k==="long"};
+}
+function lapsOf(r){return (r.laps||[]).map(l=>({m:+l[0],s:+l[1],hr:+l[2]||0})).filter(l=>l.m>=300&&l.s>0);}
+function wavg(arr,val,w){const tw=arr.reduce((a,x)=>a+w(x),0);return tw?arr.reduce((a,x)=>a+val(x)*w(x),0)/tw:0;}
+function decoupling(laps){if(laps.length<6)return null;const h=Math.floor(laps.length/2),a=laps.slice(0,h),b=laps.slice(-h);
+  const ef=x=>{const p=wavg(x,l=>l.s/l.m*1000,l=>l.m),hr=wavg(x,l=>l.hr,l=>l.s);return hr?(1000/p)/hr:0;};const e1=ef(a),e2=ef(b);return e1&&e2?(e1-e2)/e1*100:null;}
+function analyseRun(r,d){
+  const t=targetsFor(d); if(!t||t.type==="race"||!isRun(r)||!(+r.km))return null;
+  const L=+S.settings.lthr||167, pace=r.sec/r.km, hr=+r.avgHr||0, laps=lapsOf(r);
+  const out={t,pace,hr,score:0,tone:"",head:"",why:"",reps:null,dec:decoupling(laps)};
+  if(t.type==="easy"){
+    const fastBy=(t.band[0]-pace)/t.band[0];
+    if(hr&&hr>t.soft&&fastBy>0.02){out.score=-1;out.tone="warn";out.head="Ran it too hard";out.why="Faster than easy pace and heart rate over "+Math.round(t.cap)+". Easy days only work if they stay easy.";}
+    else if(hr&&hr>t.soft){out.score=-1;out.tone="warn";out.head="Heart rate high for the pace";out.why="Average "+Math.round(hr)+" bpm at "+fP(pace)+"/km, above the "+Math.round(t.cap)+" easy cap. Heat, hills, poor sleep or fatigue. One run means little; two or three in a row means back off.";}
+    else if(hr&&fastBy>0.03&&hr<=t.cap){out.score=1;out.tone="good";out.head="Quick and controlled";out.why=fP(pace)+"/km at "+Math.round(hr)+" bpm, quicker than the easy band while staying under the cap. A sign fitness is ahead of your paces.";}
+    else if(hr&&hr<=t.cap){out.score=.5;out.tone="good";out.head="Spot on";out.why=fP(pace)+"/km at "+Math.round(hr)+" bpm. Easy pace, easy heart rate.";}
+    else if(fastBy>0.03){out.tone="warn";out.head="Quicker than easy";out.why="No heart rate, and the pace was faster than the easy band.";}
+    else {out.tone="";out.head="Logged";out.why=fP(pace)+"/km. Wear the strap or watch HR so the check can read effort.";}
+    if(t.long&&out.dec!=null&&out.dec>5){out.score=Math.min(out.score,0);out.why+=" Heart rate drifted "+out.dec.toFixed(1)+"% in the second half, so the long run endurance needs work. Fuel earlier and keep the first half honest.";}
+    else if(t.long&&out.dec!=null&&out.dec<3&&out.score>0){out.why+=" Only "+out.dec.toFixed(1)+"% drift second half: strong aerobic durability.";}
+    return out;}
+  // work sessions: find the work laps
+  let work=laps.filter(l=>l.s/l.m*1000<=t.pace*(1+Math.max(.06,t.tol*2.5)));
+  if(work.length<2&&laps.length>=4){const sorted=laps.slice().sort((a,b)=>a.s/a.m-b.s/b.m);work=sorted.slice(0,Math.max(2,Math.round(laps.length*.4)));}
+  if(!work.length){out.head="Logged";out.why="Average "+fP(pace)+"/km. Press lap on your watch at the start and end of each rep so each one can be checked.";return out;}
+  const wp=wavg(work,l=>l.s/l.m*1000,l=>l.m), wh=wavg(work,l=>l.hr,l=>l.s);
+  out.reps={n:work.length,pace:wp,hr:wh,list:work};
+  const diff=(t.pace-wp)/t.pace; // + = faster
+  const hrHigh=t.hr&&wh&&wh>t.hr[1], hrLow=t.hr&&wh&&wh<t.hr[0];
+  const tgt=fP(t.pace)+"/km";
+  if(diff>t.tol&&!hrHigh){out.score=2;out.tone="good";out.head="Ahead of target";out.why="Work averaged "+fP(wp)+"/km against "+tgt+(wh?" at "+Math.round(wh)+" bpm":"")+". Faster without the heart rate blowing out: your paces can move up.";}
+  else if(Math.abs(diff)<=t.tol&&!hrHigh){out.score=hrLow?1.5:1;out.tone="good";out.head=hrLow?"On target, easier than expected":"On target";out.why="Work averaged "+fP(wp)+"/km against "+tgt+(wh?" at "+Math.round(wh)+" bpm":"")+(hrLow?". Heart rate under the band, so there is more in the tank.":". Exactly what the session asked for.");}
+  else if(diff>=-t.tol&&hrHigh){out.score=-1;out.tone="warn";out.head="Hit pace, working too hard";out.why="Pace was there ("+fP(wp)+"/km) but heart rate averaged "+Math.round(wh)+", above "+Math.round(t.hr[1])+". Either fatigue or the target is a touch fast. Don't chase it next time.";}
+  else {out.score=-1.5;out.tone="bad";out.head="Short of target";out.why="Work averaged "+fP(wp)+"/km against "+tgt+(wh?" at "+Math.round(wh)+" bpm":"")+". Check sleep, fuel and heat before blaming fitness.";}
+  if(t.long&&out.dec!=null&&out.dec>5)out.why+=" Drift "+out.dec.toFixed(1)+"% second half.";
+  return out;
+}
+function runsWithPlan(from,to){const idx=dayIndex();return Object.values(S.runs).filter(r=>isRun(r)&&r.date>=from&&r.date<=to).map(r=>({r,d:idx[r.date]?idx[r.date].d:null})).map(x=>({...x,a:analyseRun(x.r,x.d)})).filter(x=>x.a).sort((a,b)=>a.r.date.localeCompare(b.r.date));}
+function paceReview(){
+  const from=addD(TODAY,-13), items=runsWithPlan(from,TODAY), v=+S.settings.vdot||52;
+  const work=items.filter(x=>x.a.t.type==="work"), easy=items.filter(x=>x.a.t.type==="easy");
+  const ws=work.reduce((a,x)=>a+x.a.score,0), es=easy.reduce((a,x)=>a+x.a.score,0), score=ws+es*.5;
+  const pm=pmc(30), now=pm[pm.length-1]||{tsb:0};
+  const ahead=work.filter(x=>x.a.score>=2).length, misses=work.filter(x=>x.a.score<0).length+easy.filter(x=>x.a.score<0).length;
+  let dv=0, verdict="hold", why="";
+  if(!items.length){why="Not enough runs in the last two weeks to judge. Paces hold.";}
+  else if(misses>=2&&now.tsb<-20){verdict="fatigue";why="Several sessions came in hard, and form is "+Math.round(now.tsb)+". That is fatigue, not lost fitness. Paces hold; keep easy days truly easy this week.";}
+  else if(score<=-2){dv=-.5;verdict="down";why="Sessions have been coming in slower or at higher heart rate than prescribed. Easing paces slightly so the work lands in the right zone.";}
+  else if(ahead>=2&&misses===0){dv=1;verdict="up";why=ahead+" sessions ahead of target with heart rate under control. You are fitter than your paces.";}
+  else if(score>=2&&misses===0){dv=.5;verdict="up";why=work.length?"Sessions are on or ahead of target at the right heart rate. Nudging paces up.":"Easy runs are coming in quick at a low heart rate. Small nudge up.";}
+  else {why=work.length?"Sessions are landing where they should. Paces hold.":"Easy running is on track. Paces hold until there are real sessions to judge.";}
+  if(dv>0&&now.tsb<-25){dv=0;verdict="hold";why+=" Holding off for now: form is "+Math.round(now.tsb)+", so recover first.";}
+  const nv=Math.round((v+dv)*2)/2;
+  return {items,v,nv,dv,verdict,why,score,ahead,misses};
+}
+function paceRow(v){return ["Easy "+fP(paceF(.70,v))+" to "+fP(paceF(.62,v)),"Threshold "+fP(paceF(.88,v)),"Intervals "+fP(paceF(.98,v))];}
+function paceCard(compact){
+  const R=paceReview(); if(compact&&R.verdict==="hold"&&!R.items.length)return "";
+  const chg=R.nv!==R.v;
+  let h='<section class="card pad pacecard'+(chg?' chg':'')+'"><div class="ch"><div><div class="eb'+(chg?' acc':'')+'">Pace check · last 2 weeks</div><h2>'+(R.verdict==="up"?"Ready to step up":R.verdict==="down"?"Ease the paces":R.verdict==="fatigue"?"Tired, not unfit":"Paces hold")+'</h2></div><div class="mono pc-v">VDOT '+R.v+(chg?' <span>→ '+R.nv+'</span>':'')+'</div></div><div class="sub" style="margin-top:6px">'+esc(R.why)+'</div>';
+  if(chg){const a=paceRow(R.v),b=paceRow(R.nv);h+='<div class="pc-tbl">'+a.map((x,i)=>'<div><span>'+x.split(" ")[0]+'</span><span class="mono">'+x.split(" ").slice(1).join(" ")+'</span><span class="mono">'+b[i].split(" ").slice(1).join(" ")+'</span></div>').join("")+'</div><button class="btn" type="button" data-applyvdot="'+R.nv+'" style="margin-top:12px">Apply new paces</button>';}
+  if(!compact&&R.items.length)h+='<div class="pc-list">'+R.items.slice().reverse().map(x=>'<button type="button" class="pc-row" data-day="'+x.r.date+'"><span class="tone '+x.a.tone+'"></span><span class="pc-a"><b>'+esc(x.a.head)+'</b><span class="sub">'+fD(x.r.date,true)+' · '+esc(x.a.t.name)+' · '+(+x.r.km).toFixed(1)+' km</span></span><span class="r">›</span></button>').join("")+'</div>';
+  return h+'</section>';
+}
+function sessionCheckHtml(date){
+  const it=dayIndex()[date]; const rs=Object.values(S.runs).filter(r=>r.date===date&&isRun(r));
+  return rs.map(r=>{const a=analyseRun(r,it?it.d:null);if(!a)return "";const t=a.t;
+    let tgtP=t.type==="easy"?fP(t.band[0])+" to "+fP(t.band[1]):fP(t.pace), tgtH=t.type==="easy"?"under "+Math.round(t.cap):(t.hr?Math.round(t.hr[0])+" to "+Math.round(t.hr[1]):"·");
+    const actP=a.reps?fP(a.reps.pace):fP(a.pace), actH=a.reps?(a.reps.hr?Math.round(a.reps.hr):"·"):(a.hr?Math.round(a.hr):"·");
+    return '<section class="card pad sesscheck" style="margin-top:12px"><div class="eb">Session check · '+esc(t.name)+'</div><h2 class="tone-'+a.tone+'">'+esc(a.head)+'</h2><div class="sub" style="margin-top:4px">'+esc(a.why)+'</div>'+
+      '<div class="sc-grid"><span></span><span class="k">Target</span><span class="k">You</span><span class="k">Pace'+(a.reps?' (work)':'')+'</span><span class="mono">'+tgtP+'</span><span class="mono">'+actP+'</span><span class="k">Heart rate</span><span class="mono">'+tgtH+'</span><span class="mono">'+actH+'</span></div>'+
+      (a.reps&&a.reps.list.length>1?'<div class="eb" style="margin-top:12px">'+a.reps.n+' work laps</div><div class="gsets">'+a.reps.list.map(l=>'<span>'+fP(l.s/l.m*1000)+(l.hr?' · '+Math.round(l.hr):'')+'</span>').join("")+'</div>':'')+
+      (a.dec!=null?'<div class="sub mono" style="margin-top:8px">Heart rate drift second half: '+a.dec.toFixed(1)+'%</div>':'')+'</section>';}).join("");
+}
+
+/* ===================== Drag and drop sessions ===================== */
+const HARD=["quality","threshold","marathon","race","long"];
+function weekDocOf(date){for(const [id,w] of Object.entries(S.weeks)){const i=(w.days||[]).findIndex(d=>d.date===date);if(i>=0)return {id,w,i};}return null;}
+function canMove(src,dst){if(src===dst)return "";if(dst<TODAY)return "You can only move a session to today or later.";
+  if(Object.values(S.runs).some(r=>r.date===src&&isRun(r))||(S.log[src]&&S.log[src].done))return "That day's already done.";return "";}
+async function swapDays(src,dst,silent){
+  const why=canMove(src,dst); if(why){toast(why);return false;}
+  const A=weekDocOf(src),B=weekDocOf(dst); if(!A||!B){toast("Couldn't find that week.");return false;}
+  const F=["title","km","kind","detail","extra","pm"];
+  const wa=JSON.parse(JSON.stringify(A.w)), wb=A.id===B.id?wa:JSON.parse(JSON.stringify(B.w));
+  const da=wa.days[A.i], db=wb.days[B.i]; const tmp={}; F.forEach(k=>{tmp[k]=da[k];});
+  F.forEach(k=>{da[k]=db[k];db[k]=tmp[k];}); da.moved=1; db.moved=1;
+  [wa,wb].forEach(w=>{w.target=(w.days||[]).reduce((a,d)=>a+(+d.km||0),0);});
+  const prevA=A.w, prevB=B.w;
+  S.weeks[A.id]=wa; if(B.id!==A.id)S.weeks[B.id]=wb; render();
+  try{await S.db.collection("weeks").doc(A.id).set(wa); if(B.id!==A.id)await S.db.collection("weeks").doc(B.id).set(wb);}
+  catch(e){S.weeks[A.id]=prevA;S.weeks[B.id]=prevB;render();toast("Couldn't save the move. Try again.");return false;}
+  if(!silent){const warn=moveWarn(dst)||moveWarn(src);
+    toastUndo((warn?warn+" ":"")+"Moved "+tmp.title+" to "+fD(dst,true)+".",()=>swapDays(dst,src,true).then(()=>toast("Undone")));}
+  return true;
+}
+function moveWarn(date){const idx=dayIndex(),d=idx[date];if(!d||!HARD.includes(d.d.kind))return "";
+  const nb=[addD(date,-1),addD(date,1)].map(x=>idx[x]).filter(x=>x&&HARD.includes(x.d.kind)&&+x.d.km);
+  return nb.length?"Heads up: two hard days back to back ("+d.d.title+" and "+nb[0].d.title+").":"";}
+function toastUndo(m,fn){const r=$("#toastRoot");r.innerHTML='<div class="toast" role="status">'+esc(m)+' <button type="button" id="toastUndo">Undo</button></div>';
+  $("#toastUndo").onclick=()=>{r.innerHTML="";fn();};clearTimeout(toast.t);toast.t=setTimeout(()=>r.innerHTML="",6000);}
+function bindDrag(root){
+  root.querySelectorAll("[data-drag]").forEach(h=>{
+    h.addEventListener("click",e=>{e.stopPropagation();e.preventDefault();});
+    h.addEventListener("pointerdown",e=>{
+      e.preventDefault();e.stopPropagation();
+      const row=h.closest("[data-day]"), list=row.parentElement, src=row.dataset.day;
+      const rect=row.getBoundingClientRect(); const ghost=row.cloneNode(true); ghost.classList.add("drag-ghost");
+      ghost.style.cssText="position:fixed;left:"+rect.left+"px;top:"+rect.top+"px;width:"+rect.width+"px;z-index:60;pointer-events:none";
+      document.body.appendChild(ghost); row.classList.add("drag-src"); const dy=e.clientY-rect.top; let over=null;
+      try{h.setPointerCapture(e.pointerId);}catch(_){}
+      const move=ev=>{ghost.style.top=(ev.clientY-dy)+"px";
+        const el=document.elementFromPoint(rect.left+rect.width/2,ev.clientY); const tgt=el&&el.closest("[data-day]");
+        if(over&&over!==tgt)over.classList.remove("drag-over");
+        if(tgt&&tgt!==row&&list.contains(tgt)){over=tgt;tgt.classList.toggle("drag-bad",!!canMove(src,tgt.dataset.day));tgt.classList.add("drag-over");}else over=null;
+        if(ev.clientY<70)scrollBy(0,-12);else if(ev.clientY>innerHeight-70)scrollBy(0,12);};
+      const up=()=>{h.removeEventListener("pointermove",move);h.removeEventListener("pointerup",up);h.removeEventListener("pointercancel",up);
+        ghost.remove();row.classList.remove("drag-src");if(over){over.classList.remove("drag-over","drag-bad");swapDays(src,over.dataset.day);}};
+      h.addEventListener("pointermove",move);h.addEventListener("pointerup",up);h.addEventListener("pointercancel",up);
+    });
+  });
+}
+function verdictChip(date){const it=dayIndex()[date];const r=Object.values(S.runs).find(x=>x.date===date&&isRun(x));if(!r)return "";const a=analyseRun(r,it?it.d:null);return a&&a.tone?' <span class="vchip tone-'+a.tone+'">'+esc(a.head)+'</span>':"";}
+function moveChips(date){const A=weekDocOf(date);if(!A)return "";const opts=A.w.days.filter(d=>d.date!==date&&d.date>=TODAY);
+  if(!opts.length||canMove(date,opts[0].date)==="That day's already done.")return "";
+  return '<div class="movechips"><span class="eb">Move to</span>'+opts.map(d=>'<button type="button" data-moveto="'+d.date+'" data-movefrom="'+date+'">'+d.dow+' '+pISO(d.date).getDate()+'</button>').join("")+'</div>';}
 
 /* ===================== Gym ===================== */
 const MUSC={chest:"Chest",back:"Back",shoulders:"Shoulders",biceps:"Biceps",triceps:"Triceps",forearms:"Forearms",core:"Core",glutes:"Glutes",quads:"Quads",hamstrings:"Hamstrings",adductors:"Adductors",calves:"Calves"};
@@ -1416,6 +1589,8 @@ function bind(r){
   const cf=$("#chatF",r);
   if(cf){const box=$("#chat",r);box.scrollTop=box.scrollHeight;cf.onsubmit=e=>{e.preventDefault();sendChat($("#chatIn",r).value.trim());};
     $("#chatIn",r).onkeydown=e=>{if(e.key==="Enter"&&(e.metaKey||e.ctrlKey))cf.requestSubmit();};}
+  bindDrag(r);
+  r.querySelectorAll("[data-applyvdot]").forEach(b=>b.onclick=async()=>{const nv=+b.dataset.applyvdot;const st={...S.settings,vdot:nv,vdotLog:[...(S.settings.vdotLog||[]),{date:TODAY,from:+S.settings.vdot||52,to:nv,by:"you"}]};b.disabled=true;try{await S.db.doc("settings/main").set(st);S.settings=st;toast("Paces updated to VDOT "+nv);render();}catch(e){b.disabled=false;toast("Couldn't save. Try again.");}});
   r.querySelectorAll("[data-gymtpl]").forEach(b=>b.onclick=()=>openLogger(newSession(b.dataset.gymtpl)));
   r.querySelectorAll("[data-liftstart]").forEach(b=>b.onclick=()=>{const d=gymDraft();openLogger(d||newSession(b.dataset.liftstart));});
   r.querySelectorAll("[data-gymresume]").forEach(b=>b.onclick=()=>openLogger());
