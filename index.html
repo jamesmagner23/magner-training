@@ -251,7 +251,11 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .lg-name{flex:1;min-width:0;font:inherit;font-weight:600;font-size:17px;background:none;border:0;color:var(--ink);padding:6px 4px}
 .lg-strip{display:flex;gap:14px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--ink2);padding:10px 0}
 .lg-strip b{color:var(--ink);font-size:15px}
-.lg-strip input[type=date]{margin-left:auto;font:inherit;font-size:12px;background:var(--input);border:0;border-radius:8px;padding:5px 8px;color:var(--ink)}
+.lg-when{margin-left:auto;display:flex;gap:6px}
+.lg-min{display:inline-flex;align-items:center;gap:4px}
+.lg-min input{width:46px;font:inherit;font-size:14px;font-weight:600;text-align:center;background:var(--input);border:0;border-radius:8px;padding:5px 4px;color:var(--ink)}
+.lg-strip input[type=time]{font:inherit;font-size:12px;background:var(--input);border:0;border-radius:8px;padding:5px 8px;color:var(--ink)}
+.lg-strip input[type=date]{font:inherit;font-size:12px;background:var(--input);border:0;border-radius:8px;padding:5px 8px;color:var(--ink)}
 .lg-quick{display:flex;gap:8px;margin-bottom:6px}
 .lg-quick input{flex:1;min-width:0;font:inherit;background:var(--input);border:1px solid transparent;border-radius:10px;padding:10px 12px;color:var(--ink)}
 .lg-quick input:focus{border-color:var(--accent);outline:0}
@@ -268,6 +272,7 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .stp input{width:100%;min-width:0;text-align:center;font-family:var(--mono);font-size:16px;background:none;border:0;color:var(--ink);padding:0}
 .tick{height:40px;border-radius:10px;background:var(--input);color:var(--ink3);font-size:18px;font-weight:700}
 .tick[aria-pressed="true"]{background:var(--good);color:#fff}
+.lg-foot{display:flex}.lg-foot .lg-add{flex:1}
 .lg-add{width:100%;padding:8px;margin-top:4px;font-size:13px;color:var(--accent);font-weight:500}
 #lgPicker input{width:100%;margin-top:10px;font:inherit;background:var(--input);border:0;border-radius:10px;padding:10px 12px;color:var(--ink)}
 .pick{display:grid;gap:4px;margin-top:8px;max-height:46vh;overflow:auto}
@@ -1481,10 +1486,11 @@ function openLift(id){
       const vol=ds.reduce((a,st)=>a+setLoad(e,st,+L.bw||bodyW()),0);
       return '<div class="gex"><div class="gex-h"><b>'+esc(e.name)+'</b>'+(pr?'<span class="prb">PR</span>':'')+'<span class="mono sub">'+(vol?fT(vol):'')+'</span></div><div class="sub">'+e.p.map(m=>MUSC[m]).join(", ")+(e.s.length?' <span style="opacity:.7">+ '+e.s.map(m=>MUSC[m]).join(", ")+'</span>':'')+'</div><div class="gsets">'+ds.map(st=>'<span>'+fSet(e,st)+'</span>').join("")+'</div>'+(best?'<div class="sub mono" style="margin-top:4px">Est. 1RM '+Math.round(best)+' kg</div>':'')+'</div>';}).join("")+
     (L.note?'<div class="sub" style="margin-top:10px">'+esc(L.note)+'</div>':'')+'</section>';
-  x+='<div style="display:flex;gap:8px;margin-top:12px"><button class="btn ghost" type="button" id="lfEdit">Edit</button><button class="btn ghost" type="button" id="lfDel" style="color:var(--bad)">Delete</button></div>';
+  x+='<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn" type="button" id="lfCopy">Do this session again</button><button class="btn ghost" type="button" id="lfEdit">Edit</button><button class="btn ghost" type="button" id="lfDel" style="color:var(--bad)">Delete</button></div>';
   $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Gym session">'+x+'</div></div>';
   $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
   $("#lfEdit").onclick=()=>openLogger({...JSON.parse(JSON.stringify(L)),id});
+  $("#lfCopy").onclick=()=>{const d=gymDraft();if(d&&doneCount(d)){toast("Finish or discard the session in progress first");openLogger();return;}openLogger(newSession("copy:"+id));};
   $("#lfDel").onclick=async e=>{const b=e.currentTarget;if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent="Tap again to delete";return;}
     try{await S.db.collection("lifts").doc(id).set({...L,deleted:true});toast("Deleted");closeSheet();}catch(err){toast("Couldn't delete. Try again.");}};
 }
@@ -1499,7 +1505,7 @@ function exFromLast(id,sets,reps){const e=EXI[id];const last=lastFor(id);
 function newSession(kind){const now=new Date();const st=p2(now.getHours())+":"+p2(now.getMinutes());
   let L={date:TODAY,start:st,name:"Gym session",ex:[],t0:Date.now()};
   if(TEMPLATES[kind]){L.name=TEMPLATES[kind].name;L.tpl=kind;L.ex=TEMPLATES[kind].ex.map(([id,s,r])=>exFromLast(id,s,r));}
-  else if(kind==="last"){const l=lifts()[lifts().length-1];L.name=l.name||"Gym session";L.ex=(l.ex||[]).map(x=>exFromLast(x.id,(x.sets||[]).length,8));}
+  else if(kind==="last"||String(kind).startsWith("copy:")){const l=kind==="last"?lifts()[lifts().length-1]:(S.lifts||{})[kind.slice(5)];if(l){L.name=l.name||"Gym session";L.tpl=l.tpl||"";L.ex=(l.ex||[]).map(x=>({id:x.id,sets:(x.sets||[]).filter(st=>st.done!==false).map(st=>({w:+st.w||0,r:+st.r||0,done:false}))}));}}
   return L;}
 function parseQuick(txt){ // "squat 3x5 100, rdl 3x8@60; plank 3x40s"
   return txt.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean).map(s=>{
@@ -1512,7 +1518,7 @@ function openLogger(L){
   L=L||gymDraft(); if(!L)return; UI.gymL=L; const bw=bodyW();
   const draw=()=>{const s=sessStats({...L,ex:L.ex.map(x=>({...x,sets:x.sets.filter(st=>st.done)}))});
     let x='<div class="lg-top"><button class="btn ghost" type="button" id="lgX">Close</button><input id="lgName" class="lg-name" value="'+esc(L.name)+'" aria-label="Session name"><button class="btn" type="button" id="lgFin">Finish</button></div>';
-    x+='<div class="lg-strip"><span><b>'+fT(s.t)+'</b> lifted</span><span><b>'+s.sets+'</b> sets</span><span id="lgClock"></span><input type="date" id="lgDate" value="'+L.date+'" aria-label="Date"></div>';
+    x+='<div class="lg-strip"><span><b>'+fT(s.t)+'</b> lifted</span><span><b>'+s.sets+'</b> sets</span><label class="lg-min"><input id="lgMin" inputmode="numeric" value="'+(L.minSet?L.min:"")+'" placeholder="'+(L.t0&&!L.id?Math.floor((Date.now()-L.t0)/60000):(L.min||"0"))+'" aria-label="Duration in minutes"> min</label><span class="lg-when"><input type="date" id="lgDate" value="'+L.date+'" aria-label="Date"><input type="time" id="lgTime" value="'+esc(L.start||"")+'" aria-label="Start time"></span></div>';
     x+='<form class="lg-quick" id="lgQ"><input id="lgQi" placeholder="Quick add: squat 3x5 100, plank 3x40s" autocomplete="off" aria-label="Quick add"><button class="btn ghost" type="submit">Add</button></form>';
     x+=L.ex.map((xx,i)=>{const e=EXI[xx.id]||{name:xx.name||xx.id,t:"w",p:[],s:[]};const last=lastFor(xx.id,L.id);
       return '<div class="lg-ex"><div class="lg-exh"><div><b>'+esc(e.name)+'</b><div class="sub">'+e.p.map(m=>MUSC[m]).join(", ")+(last?' · last '+doneSets(last.x).map(st=>fSet(e,st)).slice(0,3).join(", "):'')+'</div></div><button type="button" class="lg-rm" data-rmex="'+i+'" aria-label="Remove exercise">×</button></div>'+
@@ -1521,10 +1527,13 @@ function openLogger(L){
           (e.t==="t"||e.t==="p"?'<span></span>':'<span class="stp"><button type="button" data-st="'+i+','+j+',w,-2.5" aria-label="Less weight">−</button><input inputmode="decimal" data-in="'+i+','+j+',w" value="'+(st.w||0)+'" aria-label="Weight"><button type="button" data-st="'+i+','+j+',w,2.5" aria-label="More weight">+</button></span>')+
           '<span class="stp"><button type="button" data-st="'+i+','+j+',r,-1" aria-label="Fewer">−</button><input inputmode="numeric" data-in="'+i+','+j+',r" value="'+(st.r||0)+'" aria-label="Reps"><button type="button" data-st="'+i+','+j+',r,1" aria-label="More">+</button></span>'+
           '<button type="button" class="tick" data-tick="'+i+','+j+'" aria-pressed="'+!!st.done+'" aria-label="Set done">✓</button></div>').join("")+
-        '<button type="button" class="lg-add" data-addset="'+i+'">+ Add set</button></div>';}).join("");
+        '<div class="lg-foot"><button type="button" class="lg-add" data-addset="'+i+'">+ Add set</button><button type="button" class="lg-add" data-tickall="'+i+'">'+(xx.sets.every(st=>st.done)?'Untick all':'Tick all')+'</button></div></div>';}).join("");
     x+='<button type="button" class="btn ghost block" id="lgPick" style="margin-top:12px">+ Add exercise</button><div id="lgPicker"></div>';
     x+='<div class="field" style="margin-top:12px"><label for="lgNote">Notes</label><textarea id="lgNote" placeholder="How it felt, anything to remember">'+esc(L.note||"")+'</textarea></div>';
+    x+='<button type="button" class="btn ghost block" id="lgDiscard" style="margin-top:12px;color:var(--bad)">'+(L.id?"Discard changes":"Discard session")+'</button>';
+    const prev=document.querySelector(".sheet.lg"), sy=prev?prev.scrollTop:0, fo=document.activeElement&&document.activeElement.dataset?document.activeElement.dataset.in:null;
     $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet lg" role="dialog" aria-modal="true" aria-label="Log gym session">'+x+'<div id="lgRest" class="lg-rest" hidden></div></div></div>';
+    const nw=document.querySelector(".sheet.lg"); if(nw){nw.scrollTop=sy;}
     bindL();};
   const keep=()=>{saveDraft(L);};
   let restT=null, restEnd=0;
@@ -1533,18 +1542,23 @@ function openLogger(L){
     if(left<=0){r.innerHTML='<b>Go</b>';if(left===0){try{navigator.vibrate&&navigator.vibrate(200);}catch(e){}}if(left<-3){restEnd=0;r.hidden=true;}return;}
     r.innerHTML='Rest <b>'+Math.floor(left/60)+':'+p2(left%60)+'</b><button type="button" id="lgRestX">Skip</button>';const x=$("#lgRestX");if(x)x.onclick=()=>{restEnd=0;r.hidden=true;};};
   const rest=sec=>{restEnd=Date.now()+sec*1000;clearInterval(restT);restT=setInterval(restTick,500);restTick();};
-  const clock=()=>{const c=$("#lgClock");if(!c){clearInterval(UI.gymClk);return;}if(!L.t0)return;const m=Math.floor((Date.now()-L.t0)/60000);c.innerHTML='<b>'+m+'</b> min';};
+  const clock=()=>{const c=$("#lgMin");if(!c){clearInterval(UI.gymClk);return;}if(!L.t0||L.id)return;c.placeholder=Math.floor((Date.now()-L.t0)/60000);};
   clearInterval(UI.gymClk);UI.gymClk=setInterval(clock,15000);
   function bindL(){clock();restTick();
     $("#lgX").onclick=()=>{keep();closeSheet();render();};
     $("#lgName").oninput=e=>{L.name=e.target.value;keep();};
     $("#lgDate").onchange=e=>{L.date=e.target.value||TODAY;keep();};
+    $("#lgTime").onchange=e=>{L.start=e.target.value||L.start;keep();};
+    $("#lgMin").onchange=e=>{const v=parseInt(e.target.value,10);if(v>0){L.min=v;L.minSet=true;}else{L.minSet=false;}keep();};
+    $("#lgDiscard").onclick=e=>{const b=e.currentTarget;if(b.dataset.c!=="1"){b.dataset.c="1";b.textContent=L.id?"Tap again to drop changes":"Tap again to discard";setTimeout(()=>{if(b.isConnected){b.dataset.c="";b.textContent=L.id?"Discard changes":"Discard session";}},3000);return;}
+      clearDraft();clearInterval(UI.gymClk);closeSheet();toast(L.id?"Changes dropped":"Session discarded");render();};
     $("#lgNote").oninput=e=>{L.note=e.target.value;keep();};
     document.querySelectorAll("#sheetRoot [data-in]").forEach(inp=>inp.onchange=()=>{const [i,j,k]=inp.dataset.in.split(",");L.ex[+i].sets[+j][k]=+inp.value||0;keep();draw();});
     document.querySelectorAll("#sheetRoot [data-st]").forEach(b=>b.onclick=()=>{const [i,j,k,d]=b.dataset.st.split(",");const st=L.ex[+i].sets[+j];st[k]=Math.max(0,Math.round(((+st[k]||0)+(+d))*10)/10);keep();draw();});
     document.querySelectorAll("#sheetRoot [data-tick]").forEach(b=>b.onclick=()=>{const [i,j]=b.dataset.tick.split(",").map(Number);const st=L.ex[i].sets[j];st.done=!st.done;
       if(st.done){const nx=L.ex[i].sets[j+1];if(nx&&!nx.done&&!(+nx.w)&&+st.w)nx.w=st.w; const e=EXI[L.ex[i].id]; keep();draw();rest(e&&(e.t==="p"||e.t==="t")?45:(e&&LOWER.some(m=>e.p.includes(m))&&e.t==="w"&&(+st.w>=60)?150:90));}else{keep();draw();}});
     document.querySelectorAll("#sheetRoot [data-addset]").forEach(b=>b.onclick=()=>{const xx=L.ex[+b.dataset.addset];const ls=xx.sets[xx.sets.length-1]||{w:0,r:8};xx.sets.push({w:ls.w,r:ls.r,done:false});keep();draw();});
+    document.querySelectorAll("#sheetRoot [data-tickall]").forEach(b=>b.onclick=()=>{const xx=L.ex[+b.dataset.tickall];const v=!xx.sets.every(st=>st.done);xx.sets.forEach(st=>st.done=v);keep();draw();});
     document.querySelectorAll("#sheetRoot [data-rmex]").forEach(b=>b.onclick=()=>{L.ex.splice(+b.dataset.rmex,1);keep();draw();});
     $("#lgQ").onsubmit=e=>{e.preventDefault();const add=parseQuick($("#lgQi").value);if(!add.length){toast("Couldn't match that. Try: squat 3x5 100");return;}add.forEach(a=>{const ex=L.ex.find(x=>x.id===a.id&&!x.sets.some(s=>s.done));if(ex)ex.sets=a.sets;else L.ex.push(a);});keep();draw();toast("Added "+add.map(a=>EXI[a.id].name).join(", "));};
     $("#lgPick").onclick=()=>{const p=$("#lgPicker");const recent=[...new Set(lifts().slice().reverse().flatMap(l=>(l.ex||[]).map(x=>x.id)))].slice(0,8);
@@ -1557,7 +1571,7 @@ function openLogger(L){
       if(!ex.length){toast("Tick at least one set first");return;}
       if(!S.db){toast("Saving is unavailable right now");return;}
       const id=L.id||(L.date+"-"+String(L.start||"0000").replace(":",""));
-      const mins=L.t0&&!L.id?Math.max(1,Math.round((Date.now()-L.t0)/60000)):(L.min||0);
+      const mins=L.minSet?+L.min:(L.t0&&!L.id?Math.max(1,Math.round((Date.now()-L.t0)/60000)):(L.min||0));
       const doc={date:L.date,start:L.start||"",name:(L.name||"Gym session").trim(),tpl:L.tpl||"",ex,note:(L.note||"").trim(),bw:+L.bw||bw,min:mins>0&&mins<300?mins:(L.min||0),updated:new Date().toISOString()};
       const b=$("#lgFin");b.disabled=true;b.textContent="Saving";
       try{await S.db.collection("lifts").doc(id).set(doc);
