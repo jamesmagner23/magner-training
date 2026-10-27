@@ -239,6 +239,8 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .glist{display:grid;gap:0;margin-top:8px}
 .grow{display:grid;grid-template-columns:80px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:11px 0;border-top:1px solid var(--line);text-align:left;color:inherit}
 .grow:first-child{border-top:0}
+.actbtn{width:100%;text-align:left;color:inherit;font:inherit}
+.matchnote{font-size:12px;color:var(--ink3);margin:10px 4px 0;line-height:1.45}
 .liftlink{display:flex;gap:10px;align-items:center;width:100%;margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--sunken);color:inherit;text-align:left;font-size:14px}
 .liftlink b{font-weight:500;flex:1}.liftlink span{font-family:var(--mono);font-size:12px;color:var(--ink2)}
 .gex{padding:12px 0}.gex+.gex{border-top:1px solid var(--line)}
@@ -806,7 +808,7 @@ function dailyLoad(){
     const syn=Object.values(S.runs).filter(r=>r.date===l.date);
     if(l.manualKm>0&&!syn.some(r=>isRun(r)&&r.source!=="manual"))0;
     if(l.xMin>0){const k=/bike|ride/i.test(l.xType||"")?"bike":/swim|water/i.test(l.xType||"")?"swim":"other";if(!syn.some(r=>sportKind(r)===k))add(l.date,k,(l.xMin/60)*(k==="bike"?.65*.65:.7*.7)*100);}
-    if(l.gymDone&&!syn.some(r=>sportKind(r)==="gym"))add(l.date,"gym",45/60*.55*.55*100);
+    if(l.gymDone&&!syn.some(r=>sportKind(r)==="gym")){const ls=(typeof lifts==="function"?lifts():[]).filter(x=>x.date===l.date);if(ls.length)ls.forEach(x=>{const m=+x.min||45;add(l.date,"gym",m/60*.55*.55*100);});else add(l.date,"gym",45/60*.55*.55*100);}
   });
   return d;
 }
@@ -819,8 +821,18 @@ function pmc(days){
 function formLabel(t){return t<-30?["High risk","bad"]:t<-10?["Building","warn"]:t<5?["Neutral",""]:t<25?["Fresh","good"]:["Detraining",""];}
 const SPORTS=["run","bike","swim","gym","other"];
 function tssHow(a){const k=sportKind(a); if(a.avgHr)return "heart rate"; if(k==="run"&&a.km>0)return "pace"; return "estimate";}
+function gymMatch(date){ // pair app-logged lift sessions with Garmin/Strava gym activities on the same day (nearest start time)
+  const st=Object.entries(S.runs).filter(([,r])=>r.date===date&&sportKind(r)==="gym").map(([id,r])=>({id,r,t:String(r.start||"").slice(11,15)}));
+  const ls=(typeof lifts==="function"?lifts():[]).filter(l=>l.date===date).map(l=>({l,t:String(l.start||"").replace(":","")}));
+  const pairs=[], used=new Set(); const mins=t=>{t=String(t||"").padStart(4,"0");return (+t.slice(0,2))*60+(+t.slice(2,4));};
+  ls.forEach(x=>{let best=null,bd=1e9;st.forEach(y=>{if(used.has(y.id))return;const d=x.t&&y.t?Math.abs(mins(x.t)-mins(y.t)):0;if(d<bd){bd=d;best=y;}});if(best){used.add(best.id);pairs.push({lift:x.l,act:best.r,actId:best.id});}else pairs.push({lift:x.l,act:null});});
+  return pairs;}
+function liftMinutes(l){const m=gymMatch(l.date).find(p=>p.lift.id===l.id);return m&&m.act?Math.round(m.act.sec/60):(+l.min||0);}
 function loadItems(date){
-  const items=Object.values(S.runs).filter(r=>r.date===date).map(r=>({title:r.title||r.type||"Activity",k:sportKind(r),sec:+r.sec||0,km:+r.km||0,hr:r.avgHr,run:isRun(r),tss:tssOf(r),how:tssHow(r),start:r.start||""}));
+  const pairs=gymMatch(date), byAct={}; pairs.forEach(p=>{if(p.act)byAct[p.act.stravaId||p.act.start]=p.lift;});
+  const items=Object.values(S.runs).filter(r=>r.date===date).map(r=>{const lf=sportKind(r)==="gym"?byAct[r.stravaId||r.start]:null;
+    return {title:lf?(lf.name||"Gym session"):(r.title||r.type||"Activity"),k:sportKind(r),sec:+r.sec||0,km:+r.km||0,hr:r.avgHr,run:isRun(r),tss:tssOf(r),how:tssHow(r),start:r.start||"",liftId:lf?lf.id:null,lifted:lf?sessStats(lf).t:0};});
+  pairs.filter(p=>!p.act).forEach(p=>{const m=+p.lift.min||45;items.push({title:p.lift.name||"Gym session",k:"gym",sec:m*60,tss:m/60*.55*.55*100,how:"estimate",start:p.lift.date+"T"+String(p.lift.start||"").replace(":",""),liftId:p.lift.id,lifted:sessStats(p.lift).t});});
   const l=S.log[date];
   if(l){
     if(l.xMin>0){const k=/bike|ride/i.test(l.xType||"")?"bike":/swim|water/i.test(l.xType||"")?"swim":"other";if(!items.some(i=>i.k===k))items.push({title:(l.xType||"Cross-train")+" (logged)",k,sec:l.xMin*60,tss:(l.xMin/60)*(k==="bike"?.65*.65:.7*.7)*100,how:"estimate"});}
@@ -884,9 +896,8 @@ function openWeekSheet(start,focus){
     if(!its.length&&!extra.length&&!l.note&&!l.lifts&&!liftsOn(d).length){
       x+='<button type="button" class="wkd-slim'+(d===TODAY?' today':'')+'" id="wk-'+d+'" data-wklog="'+d+'"><span class="wkd-date">'+lab+'</span><span class="wkd-t">'+esc(pl?pl.title:"")+'<span class="sub">'+(d>TODAY?'Coming up':'Nothing recorded')+(planLine?' · '+planLine:'')+'</span></span><span class="r">›</span></button>';return;}
     x+='<div class="wkd'+(d===TODAY?' today':'')+'" id="wk-'+d+'"><button type="button" class="wkd-head" data-wklog="'+d+'"><span class="wkd-date">'+lab+'</span><span class="wkd-t">'+esc(pl?pl.title:"Activity")+(planLine?'<span class="sub">'+planLine+'</span>':'')+'</span><span class="wkd-n">'+(its.length?Math.round(its.reduce((a,b)=>a+b.tss,0))+'<small> TSS</small>':'')+'</span><span class="r">›</span></button>';
-    if(its.length)x+='<div class="acts">'+its.map(a=>'<div class="act"><span class="dotk" style="background:'+SPORT_COL[a.k]+'"></span><span class="act-a"><b>'+esc(a.title)+'</b><span class="sub">'+fHM(a.sec)+(a.run&&a.km>0?' · '+a.km.toFixed(2)+' km · '+fP(a.sec/a.km)+'/km':(a.km>0&&a.k!=="gym"?' · '+a.km.toFixed(1)+' km':''))+(a.hr?' · '+Math.round(a.hr)+' bpm':'')+'</span></span><span class="act-n"><b>'+Math.round(a.tss)+'</b></span></div>').join("")+'</div>';
+    if(its.length)x+='<div class="acts">'+its.map(a=>(a.liftId?'<button type="button" class="act actbtn" data-liftopen="'+a.liftId+'">':'<div class="act">')+'<span class="dotk" style="background:'+SPORT_COL[a.k]+'"></span><span class="act-a"><b>'+esc(a.title)+'</b><span class="sub">'+fHM(a.sec)+(a.run&&a.km>0?' · '+a.km.toFixed(2)+' km · '+fP(a.sec/a.km)+'/km':(a.km>0&&a.k!=="gym"?' · '+a.km.toFixed(1)+' km':''))+(a.hr?' · '+Math.round(a.hr)+' bpm':'')+(a.lifted?' · '+fT(a.lifted)+' lifted':'')+'</span></span><span class="act-n"><b>'+Math.round(a.tss)+'</b></span>'+(a.liftId?'</button>':'</div>')).join("")+'</div>';
     {const vc=verdictChip(d);if(vc)x+='<div class="wkd-tags">'+vc+'</div>';}
-    x+=liftsOn(d).map(L=>{const st=sessStats(L);return '<button type="button" class="liftlink" data-liftopen="'+L.id+'"><b>'+esc(L.name||"Gym session")+'</b><span>'+fT(st.t)+' · '+st.sets+' sets</span><span>›</span></button>';}).join("");
     if(extra.length)x+='<div class="wkd-tags">'+extra.map(e=>'<span>'+e+'</span>').join("")+'</div>';
     if(l.lifts)x+='<div class="sub" style="margin-top:6px">'+esc(l.lifts)+'</div>';
     if(l.note)x+='<button type="button" class="wkd-note clamp">'+esc(l.note)+'</button>';
@@ -1493,12 +1504,13 @@ function doneCount(L){return (L.ex||[]).reduce((a,x)=>a+(x.sets||[]).filter(s=>s
 /* ---- session detail ---- */
 function openLift(id){
   const L=(S.lifts||{})[id]; if(!L)return; const s=sessStats(L);
-  const strava=Object.values(S.runs).filter(r=>r.date===L.date&&sportKind(r)==="gym");
-  const mins=L.min||(strava[0]?Math.round(strava[0].sec/60):0);
+  const mp=gymMatch(L.date).find(p=>p.lift.id===id); const act=mp&&mp.act;
+  const mins=act?Math.round(act.sec/60):(+L.min||0);
   let x='<div class="sheet-top"><span class="eb">'+fD(L.date,true)+'</span><button class="btn ghost" id="shX" type="button">Close</button></div>';
   x+='<section class="dk pad"><h2 style="margin:0">'+esc(L.name||"Session")+'</h2><div class="gbig" style="color:var(--on)">'+fT(s.t)+'<small> lifted</small></div>'+
     '<div class="metrics"><div class="m"><div class="k">Sets</div><div class="v">'+s.sets+'</div></div><div class="m"><div class="k">Reps</div><div class="v">'+s.reps+'</div></div><div class="m"><div class="k">Exercises</div><div class="v">'+(L.ex||[]).filter(x=>doneSets(x).length).length+'</div></div><div class="m"><div class="k">Time</div><div class="v">'+(mins?mins+'<small>min</small>':'·')+'</div></div></div>'+
     bodySvg(s.mus)+splitBar(s.mus)+'</section>';
+  x+='<div class="matchnote">'+(act?'Matched to your watch: '+esc(act.title||"Weight training")+' · '+Math.round(act.sec/60)+' min'+(act.avgHr?' · '+Math.round(act.avgHr)+' bpm':'')+'. Counted once.':'No watch session found for this day. Time and load come from what you logged.')+'</div>';
   x+='<section class="card pad" style="margin-top:12px"><div class="eb">Exercises</div>'+(L.ex||[]).filter(xx=>doneSets(xx).length).map(xx=>{const e=EXI[xx.id]||{name:xx.name,t:"w",p:[],s:[],bw:0};const ds=doneSets(xx);
       const best=e.t==="w"?Math.max(0,...ds.map(st=>e1rm(st.w,st.r))):0; const prev=e.t==="w"?prsBefore(xx.id,L.date,id):0; const pr=best&&prev&&best>prev+0.01;
       const vol=ds.reduce((a,st)=>a+setLoad(e,st,+L.bw||bodyW()),0);
