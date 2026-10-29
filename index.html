@@ -689,7 +689,7 @@ function vToday(){
     '<div class="wk-read">'+esc(weekRead(dts))+'</div>'+
     '<div class="metrics"><div class="m"><div class="k">Sessions</div><div class="v">'+tot.n+'</div></div><div class="m"><div class="k">Load</div><div class="v">'+Math.round(tot.tss)+'<small>TSS</small></div></div>'+
     (runWeek?'<div class="m"><div class="k">Key sessions</div><div class="v">'+qd+'<small>/ '+qual.length+'</small></div></div>':'')+
-    (ft?'<div class="m"><div class="k">Foot · '+fD(ft.d)+'</div><div class="v" style="color:'+(ft.v>=4?'var(--bad)':ft.v>=2?'var(--warn)':'var(--good)')+'">'+ft.v+'<small>/ 6</small></div></div>':(runWeek?'':'<div class="m"><div class="k">Run</div><div class="v">0<small>km</small></div></div>'))+
+    '<div class="m"><div class="k">Elevation</div><div class="v">'+Math.round(dts.reduce((q,dd)=>q+Object.values(S.runs).filter(r=>r.date===dd&&isRun(r)).reduce((a,r)=>a+(+r.elev||+r.ascent||0),0),0))+'<small>m</small></div></div>'+
     '</div><button class="linkrow" type="button" data-wkopen="'+days7[0].date+'"><span>Week detail</span><span aria-hidden="true">›</span></button></section>';}
   h+='<section><div class="days">'+days7.map(x=>dayRow(x)).join("")+'</div></section>';
   h+=paceCard(true);
