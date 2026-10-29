@@ -662,7 +662,7 @@ function doneCard(d){
   const others=Object.values(S.runs).filter(r=>r.date===d.date&&!isRun(r));
   return '<section class="card pad donecard"><div class="ch"><span class="eb">Today · '+fD(d.date,true)+'</span><span class="donetag">Done ✓</span></div>'+
     '<div class="done-t">'+esc(d.title)+(a&&a.tone?' <span class="vchip tone-'+a.tone+'">'+esc(a.head)+'</span>':'')+'</div>'+
-    (km?'<div class="done-m mono"><span><b>'+km.toFixed(1)+'</b> km</span><span><b>'+fP(sec/km)+'</b> /km</span>'+(hr?'<span><b>'+hr+'</b> bpm</span>':'')+'<span><b>'+fHM(sec)+'</b></span></div>':'')+
+    (km?'<div class="done-m mono"><span><b>'+km.toFixed(1)+'</b> km</span><span><b>'+fP(sec/km)+'</b> /km</span>'+(hr?'<span><b>'+hr+'</b> bpm</span>':'')+'<span><b>'+fHM(sec)+'</b>'+(rs[0]&&+rs[0].el>sec+29?' <small>('+fHM(+rs[0].el)+' elapsed)</small>':'')+'</span></div>':'')+
     (others.length?'<div class="sub" style="margin-top:6px">Also: '+others.map(o=>esc(SPORT_LBL[sportKind(o)]||o.type)+' '+fHM(o.sec)).join(", ")+'</div>':'')+
     '<button class="linkrow" type="button" data-day="'+d.date+'"><span>Session details</span><span aria-hidden="true">›</span></button></section>';}
 function vToday(){
@@ -1215,24 +1215,32 @@ function targetsFor(d,v){
   if(k==="recovery")return {type:"easy",name:"Recovery",band:[eS,eS*1.12],cap:L*.81,soft:L*.85};
   return {type:"easy",name:k==="long"?"Long easy":"Easy",band:[eF,eS],cap:L*.89,soft:L*.91,long:k==="long"};
 }
-function lapsOf(r){return (r.laps||[]).map(l=>({m:+l[0],s:+l[1],hr:+l[2]||0})).filter(l=>l.m>=300&&l.s>0);}
+function lapsOf(r){return (r.laps||[]).map(l=>({m:+l[0],s:+l[1],hr:+l[2]||0,el:+l[3]||+l[1]})).filter(l=>l.m>=300&&l.s>0);}
+function fMS(sec){sec=Math.round(sec);return Math.floor(sec/60)+':'+p2(sec%60);}
 function wavg(arr,val,w){const tw=arr.reduce((a,x)=>a+w(x),0);return tw?arr.reduce((a,x)=>a+val(x)*w(x),0)/tw:0;}
 function decoupling(laps){if(laps.length<6)return null;const h=Math.floor(laps.length/2),a=laps.slice(0,h),b=laps.slice(-h);
   const ef=x=>{const p=wavg(x,l=>l.s/l.m*1000,l=>l.m),hr=wavg(x,l=>l.hr,l=>l.s);return hr?(1000/p)/hr:0;};const e1=ef(a),e2=ef(b);return e1&&e2?(e1-e2)/e1*100:null;}
 function analyseRun(r,d){
   const t=targetsFor(d); if(!t||t.type==="race"||!isRun(r)||!(+r.km))return null;
-  const L=+S.settings.lthr||167, pace=r.sec/r.km, hr=+r.avgHr||0, laps=lapsOf(r);
-  const out={t,pace,hr,score:0,tone:"",head:"",why:"",reps:null,dec:decoupling(laps)};
+  const L=+S.settings.lthr||167, el=Math.max(+r.el||0,+r.sec||0), stop=Math.max(0,el-(+r.sec||0)), key=!!(t.long||t.type==="work"), hr=+r.avgHr||0, laps=lapsOf(r);
+  const pace=(key&&t.long?el:r.sec)/r.km;
+  const out={t,pace,hr,score:0,tone:"",head:"",why:"",reps:null,dec:decoupling(laps),stop,el,key};
+  const stopNote=()=>{if(!key||stop<30)return;const pct=stop/el*100;out.score-=pct>2?1:.5;if(out.tone==="good"||!out.tone)out.tone="warn";
+    out.why+=" Watch stopped for "+fMS(stop)+" ("+pct.toFixed(1)+"% of the session). Long runs and key sessions are judged on elapsed time: the clock keeps running, so do you. Walk if you must, but don't stop the watch.";};
   if(t.type==="easy"){
     const fastBy=(t.band[0]-pace)/t.band[0];
     if(hr&&hr>t.soft&&fastBy>0.02){out.score=-1;out.tone="warn";out.head="Ran it too hard";out.why="Faster than easy pace and heart rate over "+Math.round(t.cap)+". Easy days only work if they stay easy.";}
     else if(hr&&hr>t.soft){out.score=-1;out.tone="warn";out.head="Heart rate high for the pace";out.why="Average "+Math.round(hr)+" bpm at "+fP(pace)+"/km, above the "+Math.round(t.cap)+" easy cap. Heat, hills, poor sleep or fatigue. One run means little; two or three in a row means back off.";}
     else if(hr&&fastBy>0.03&&hr<=t.cap){out.score=1;out.tone="good";out.head="Quick and controlled";out.why=fP(pace)+"/km at "+Math.round(hr)+" bpm, quicker than the easy band while staying under the cap. A sign fitness is ahead of your paces.";}
     else if(hr&&hr<=t.cap){out.score=.5;out.tone="good";out.head="Spot on";out.why=fP(pace)+"/km at "+Math.round(hr)+" bpm. Easy pace, easy heart rate.";}
+    else if(hr){out.score=0;out.tone="warn";out.head="Top end of easy";out.why=fP(pace)+"/km at "+Math.round(hr)+" bpm, right on the "+Math.round(t.cap)+" easy cap. Fine once, but easy days should sit a few beats lower.";}
     else if(fastBy>0.03){out.tone="warn";out.head="Quicker than easy";out.why="No heart rate, and the pace was faster than the easy band.";}
     else {out.tone="";out.head="Logged";out.why=fP(pace)+"/km. Wear the strap or watch HR so the check can read effort.";}
     if(t.long&&out.dec!=null&&out.dec>5){out.score=Math.min(out.score,0);out.why+=" Heart rate drifted "+out.dec.toFixed(1)+"% in the second half, so the long run endurance needs work. Fuel earlier and keep the first half honest.";}
     else if(t.long&&out.dec!=null&&out.dec<3&&out.score>0){out.why+=" Only "+out.dec.toFixed(1)+"% drift second half: strong aerobic durability.";}
+    if(!t.long&&out.dec!=null&&out.dec>6){out.score=Math.min(out.score,0);if(out.tone==="good")out.tone="warn";out.head=(out.head==="Spot on"||out.head==="Top end of easy")?"Heart rate crept up":out.head;out.why+=" Heart rate crept "+out.dec.toFixed(1)+"% from the first half to the second at the same pace. Common in the first weeks back (blood volume drops after time off), in warm afternoons, or when tired. If it repeats, slow the second half down rather than chase the pace.";}
+    if(!key&&stop>=180)out.why+=" Watch stopped "+fMS(stop)+" in total.";
+    stopNote();
     return out;}
   // work sessions: find the work laps
   let work=laps.filter(l=>l.s/l.m*1000<=t.pace*(1+Math.max(.06,t.tol*2.5)));
@@ -1248,6 +1256,7 @@ function analyseRun(r,d){
   else if(diff>=-t.tol&&hrHigh){out.score=-1;out.tone="warn";out.head="Hit pace, working too hard";out.why="Pace was there ("+fP(wp)+"/km) but heart rate averaged "+Math.round(wh)+", above "+Math.round(t.hr[1])+". Either fatigue or the target is a touch fast. Don't chase it next time.";}
   else {out.score=-1.5;out.tone="bad";out.head="Short of target";out.why="Work averaged "+fP(wp)+"/km against "+tgt+(wh?" at "+Math.round(wh)+" bpm":"")+". Check sleep, fuel and heat before blaming fitness.";}
   if(t.long&&out.dec!=null&&out.dec>5)out.why+=" Drift "+out.dec.toFixed(1)+"% second half.";
+  stopNote();
   return out;
 }
 function runsWithPlan(from,to){const idx=dayIndex();return Object.values(S.runs).filter(r=>isRun(r)&&r.date>=from&&r.date<=to).map(r=>({r,d:idx[r.date]?idx[r.date].d:null})).map(x=>({...x,a:analyseRun(x.r,x.d)})).filter(x=>x.a).sort((a,b)=>a.r.date.localeCompare(b.r.date));}
@@ -1283,7 +1292,8 @@ function sessionCheckHtml(date){
     let tgtP=t.type==="easy"?fP(t.band[0])+" to "+fP(t.band[1]):fP(t.pace), tgtH=t.type==="easy"?"under "+Math.round(t.cap):(t.hr?Math.round(t.hr[0])+" to "+Math.round(t.hr[1]):"·");
     const actP=a.reps?fP(a.reps.pace):fP(a.pace), actH=a.reps?(a.reps.hr?Math.round(a.reps.hr):"·"):(a.hr?Math.round(a.hr):"·");
     return '<section class="card pad sesscheck" style="margin-top:12px"><div class="eb">Session check · '+esc(t.name)+'</div><h2 class="tone-'+a.tone+'">'+esc(a.head)+'</h2><div class="sub" style="margin-top:4px">'+esc(a.why)+'</div>'+
-      '<div class="sc-grid"><span></span><span class="k">Target</span><span class="k">You</span><span class="k">Pace'+(a.reps?' (work)':'')+'</span><span class="mono">'+tgtP+'</span><span class="mono">'+actP+'</span><span class="k">Heart rate</span><span class="mono">'+tgtH+'</span><span class="mono">'+actH+'</span></div>'+
+      '<div class="sc-grid"><span></span><span class="k">Target</span><span class="k">You</span><span class="k">Pace'+(a.reps?' (work)':'')+'</span><span class="mono">'+tgtP+'</span><span class="mono">'+actP+'</span><span class="k">Heart rate</span><span class="mono">'+tgtH+'</span><span class="mono">'+actH+'</span>'+
+      '<span class="k">Stopped</span><span class="mono">'+(a.key?'0:00':'fine')+'</span><span class="mono'+(a.key&&a.stop>=30?' tone-warn':'')+'">'+fMS(a.stop)+'</span></div>'+
       (a.reps&&a.reps.list.length>1?'<div class="eb" style="margin-top:12px">'+a.reps.n+' work laps</div><div class="gsets">'+a.reps.list.map(l=>'<span>'+fP(l.s/l.m*1000)+(l.hr?' · '+Math.round(l.hr):'')+'</span>').join("")+'</div>':'')+
       (a.dec!=null?'<div class="sub mono" style="margin-top:8px">Heart rate drift second half: '+a.dec.toFixed(1)+'%</div>':'')+'</section>';}).join("");
 }
