@@ -519,7 +519,7 @@ function zoneOfPace(spk){const Z=ZONES();for(const z of Z){if(spk<=z.slow&&spk>z
 function zoneText(k){const z=ZONES(),v=+S.settings.vdot||52;const gm=(pDur(S.settings.goalMarathon)||10620)/42.195;
   return k==="E"?fP(paceF(.70,v))+" to "+fP(paceF(.62,v))+"/km":k==="GMP"?fP(gm)+"/km":k==="M"?fP(predict(v,42195)/42.195)+"/km":k==="T"?fP(paceF(.88,v))+"/km":k==="I"?fP(paceF(.98,v))+"/km":fP(paceF(1.07,v))+"/km";}
 const ZK={E:"st",GMP:"mp",M:"mp",T:"lt2",I:"vo2",R:"sp"};
-const fill=t=>esc(t).replace(/\{(E|M|T|I|R|GMP)\}/g,(m,k)=>'<span class="pace z-'+ZK[k]+'">'+zoneText(k)+'</span>');
+const fill=t=>esc(t).replace(/(slower than|no faster than) \{E\}/gi,(m,w)=>{return w+' <span class="pace z-rec">'+zoneText('E').split(' to ')[1].replace('/km','')+'/km</span>';}).replace(/\{(E|M|T|I|R|GMP)\}/g,(m,k)=>'<span class="pace z-'+ZK[k]+'">'+zoneText(k)+'</span>');
 
 /* Session kind to zone */
 const KZ={easy:"st",recovery:"rec",long:"st",marathon:"mp",threshold:"lt2",quality:"vo2",race:"race",rest:"x",cross:"x",strength:"x"};
