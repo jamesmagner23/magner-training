@@ -750,15 +750,37 @@ function vFitness(){
 
 function vRuns(){
   let h=head("Your running","Runs and sessions","Every run is read against the plan for that day.");
-  h+='<section class="card pad"><label class="drop" id="drop" for="fIn"><b style="color:var(--accent)">Import from Garmin or Strava</b><div style="margin-top:4px">Garmin Connect activities CSV, Strava activities.csv, or .tcx / .gpx files</div></label><input id="fIn" type="file" multiple accept=".csv,.tcx,.gpx" hidden><div class="sub" style="margin-top:10px">Garmin Connect on a computer: Activities, All activities, Export CSV. Gym, bike and swim sessions import too and count as cross-training.</div></section>';
   const all=Object.values(S.runs).sort((a,b)=>(b.start||b.date).localeCompare(a.start||a.date)); const idx=dayIndex();
-  h+='<section class="card pad" style="margin-top:14px"><div class="ch"><h2>Recorded</h2><span class="sub mono">'+all.length+' activities</span></div>';
+  h+='<section class="card pad"><div class="ch"><h2>Recorded</h2><span class="sub mono">'+all.length+' activities</span></div>';
   if(!all.length)h+='<div class="empty">Nothing yet. First run of the block is Tuesday 27 October.</div>';
   else h+='<div class="days" style="margin-top:12px">'+all.slice(0,150).map(r=>{const it=idx[r.date];const z=isRun(r)?zoneOfPace(r.sec/r.km):"x";const dd=pISO(r.date);
     return '<button class="day z-'+z+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(r.title||r.type||"Activity")+'</div><div class="s">'+(isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km':esc(r.type||"Cross-train"))+' · '+fDur(r.sec)+(r.avgHr?' · '+Math.round(r.avgHr)+' bpm':'')+(it&&isRun(r)?' · plan '+it.d.km+' km':'')+'</div></span><span class="r">›</span></button>';}).join("")+'</div>';
-  h+='</section>'+shoeCard(); return h;
+  h+='</section>'+shoeCard()+'<details class="card pad older" style="margin-top:14px"><summary><span class="eb">Import a file manually</span><div class="sub" style="margin-top:4px">Only needed if something didn\'t come through from Strava</div></summary><div style="margin-top:12px"><label class="drop" id="drop" for="fIn"><b style="color:var(--accent)">Import from Garmin or Strava</b><div style="margin-top:4px">Garmin Connect activities CSV, Strava activities.csv, or .tcx / .gpx files</div></label><input id="fIn" type="file" multiple accept=".csv,.tcx,.gpx" hidden><div class="sub" style="margin-top:10px">Garmin Connect on a computer: Activities, All activities, Export CSV. Gym, bike and swim sessions import too and count as cross-training.</div></div></details>'; return h;
 }
 
+function gymCoachCard(){
+  const L=lifts(), last=L[L.length-1], mon=monOf(TODAY), sun=addD(mon,6);
+  const wk=liftAgg(mon,sun), m4=liftAgg(addD(TODAY,-27),TODAY);
+  const garmin=Object.values(S.runs).filter(r=>!isRun(r)&&/weight|strength|workout/i.test(r.type||"")&&r.date>=mon&&r.date<=sun&&!/surf/i.test(r.title||""));
+  const wkDays=new Set(wk.ls.map(l=>l.date).concat(garmin.filter(r=>/weight/i.test(r.type||"")).map(r=>r.date)));
+  const w=weekDocOf(TODAY); const planned=w?(w.w.days||[]).filter(d=>/strength|gym/i.test((d.extra||"")+" "+(d.title||""))).length:0;
+  let h='<section class="card pad"><div class="ch"><div class="eb acc">Gym</div><span class="sub mono">'+wkDays.size+(planned?' / '+planned:'')+' this week</span></div>';
+  if(!last){return h+'<div class="empty">Log a session in the Gym tab and your coach will track it here.</div></section>';}
+  const st=sessStats(last), top=Object.keys(st.mus).sort((a,b)=>st.mus[b]-st.mus[a]).slice(0,3).map(k=>MUSC[k]);
+  h+='<h2>'+esc(last.name||"Gym session")+' · '+fD(last.date,true)+'</h2><div class="sub" style="margin-top:4px">'+fT(st.t)+' lifted · '+st.sets+' sets'+(last.min?' · '+last.min+' min':'')+(top.length?' · '+top.join(", "):'')+'</div>';
+  const next=(last.ex||[]).map(x=>{const e=EXI[x.id];const ds=doneSets(x);if(!e||!ds.length)return null;const r0=+ds[0].r||0,w0=+ds[0].w||0;const clean=ds.every(z=>(+z.r||0)>=r0&&(+z.w||0)>=w0);
+      const prev=lastFor(x.id,last.id);let up="";if(prev){const pt=doneSets(prev.x).reduce((a,z)=>a+(+z.w||0)*(+z.r||0),0),ct=ds.reduce((a,z)=>a+(+z.w||0)*(+z.r||0),0);if(ct>pt)up="up";else if(ct<pt)up="down";}
+      let tip;if(e.t==="w"){const inc=LOWER.some(m=>e.p.includes(m))&&w0>=40?5:2.5;tip=clean&&w0?ds.length+' × '+r0+' at '+(w0+inc)+' kg':ds.length+' × '+r0+' at '+w0+' kg, clean every set first';}
+      else if(e.t==="t")tip=ds.length+' × '+(r0+5)+'s';else if(e.t==="b")tip=ds.length+' × '+(r0+1)+(w0?' at +'+w0+' kg':'');else tip=ds.length+' × '+r0;
+      return {n:e.name,tip,up};}).filter(Boolean).slice(0,6);
+  if(next.length)h+='<div class="eb" style="margin-top:14px">Next time</div><table class="tbl" style="margin-top:6px"><tbody>'+next.map(n=>'<tr><td>'+esc(n.n)+(n.up?' <span class="sub">'+(n.up==="up"?"↑":"↓")+'</span>':'')+'</td><td class="mono" style="text-align:right">'+esc(n.tip)+'</td></tr>').join("")+'</tbody></table>';
+  if(m4.n){h+='<div class="eb" style="margin-top:14px">Last 4 weeks · '+m4.n+' sessions · '+fT(m4.t)+'</div><div style="margin-top:8px">'+splitBar(m4.mus)+'</div>';}
+  // timing check: lower-body work in the 24h before a key run
+  const tmr=weekDocOf(addD(TODAY,1)), tday=tmr&&tmr.w.days[tmr.i];
+  const lowerToday=L.filter(l=>l.date===TODAY).some(l=>{const m=sessStats(l).mus;return LOWER.reduce((a,k)=>a+(m[k]||0),0)>=6;});
+  if(tday&&HARD.includes(tday.kind)&&lowerToday)h+='<div class="sub" style="margin-top:12px;color:var(--warn,#d9a441)">Heavy legs today and '+esc(tday.title)+' tomorrow. Keep tomorrow honest on effort and move heavy legs to after key days.</div>';
+  h+='<div class="row" style="margin-top:12px;gap:8px;display:flex"><button class="btn ghost" type="button" data-gymopen="'+esc(last.id)+'">Open session</button><button class="btn ghost" type="button" data-gymtab="1">Gym tab</button></div>';
+  return h+'</section>';}
 function vCoach(){
   let h=head("Coach","Talk to your coach","Ask anything, report how you feel, flag a niggle. Replies here use your plan and logs. Anything that changes the plan gets picked up and built in.");
   h+='<section class="card pad" style="margin-bottom:14px"><div class="ch"><div class="eb acc">Coach chat</div><span class="sub mono" id="chatState"></span></div>'+
@@ -768,6 +790,7 @@ function vCoach(){
   const live=S.notes.filter(n=>!n.resolved), daily=live.filter(n=>/-daily$/.test(n.id)), flags=live.filter(n=>!/-daily$/.test(n.id));
   const card=(n,eb)=>'<section class="card pad"><div class="eb acc">'+esc(eb||"")+(n.date?(eb?' · ':'')+fD(n.date,true):"")+'</div><h2>'+esc(n.title||"")+'</h2><div class="prose">'+esc(n.body||"").split("\n").filter(Boolean).map(p=>'<p>'+p+'</p>').join("")+'</div></section>';
   if(daily[0])h+=card(daily[0],"Daily breakdown"); else h+='<section class="card pad"><div class="eb acc">Daily breakdown</div><div class="empty">Each morning after the sync, a breakdown of yesterday and today lands here.</div></section>';
+  h+=gymCoachCard();
   const recentFlags=flags.filter(n=>!daily[0]||String(n.date||"")>=addD(TODAY,-3));
   recentFlags.slice(0,2).forEach(n=>{h+=card(n,"Flag");});
   const older=daily.slice(1).concat(flags.filter(n=>!recentFlags.slice(0,2).includes(n)));
@@ -1664,6 +1687,8 @@ function render(){
 function setTab(t){UI.tab=t;UI.sel=null;try{localStorage.setItem("mt-tab",t);}catch(e){}closeSheet();render();scrollTo(0,0);}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b&&b.tagName==="BUTTON"){setTab(b.dataset.tab);}});
 function bind(r){
+  r.querySelectorAll("[data-gymopen]").forEach(b=>b.onclick=()=>openLift(b.dataset.gymopen));
+  r.querySelectorAll("[data-gymtab]").forEach(b=>b.onclick=()=>{UI.tab="gym";render();scrollTo(0,0);});
   r.querySelectorAll("[data-week]").forEach(b=>b.onclick=()=>{const n=+b.dataset.week;UI.openWeek=UI.openWeek===n?-1:n;render();});
   r.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.day));
   r.querySelectorAll("[data-log]").forEach(b=>b.onclick=()=>openDay(b.dataset.log));
