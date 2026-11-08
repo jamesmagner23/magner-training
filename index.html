@@ -262,7 +262,7 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .lg-quick input{flex:1;min-width:0;font:inherit;background:var(--input);border:1px solid transparent;border-radius:10px;padding:10px 12px;color:var(--ink)}
 .lg-quick input:focus{border-color:var(--accent);outline:0}
 .lg-ex{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px;margin-top:10px}
-.lg-exh{display:flex;justify-content:space-between;gap:8px}.lg-exh b{font-weight:500}
+.lg-exh{display:flex;justify-content:space-between;gap:8px}.lg-acts{display:flex;gap:4px;align-items:flex-start;flex:none}.lg-sw{font:inherit;font-size:12px;color:var(--acc);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer}.lg-swp{margin:10px 0 4px}.lg-swp input{width:100%;margin-bottom:6px}.lg-exh b{font-weight:500}
 .lg-rm{width:28px;height:28px;border-radius:8px;color:var(--ink3);font-size:18px}
 .lg-hdr,.lg-set{display:grid;grid-template-columns:28px minmax(0,1.2fr) minmax(0,1fr) 44px;gap:8px;align-items:center}
 .lg-hdr{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-top:10px;padding:0 0 4px}
@@ -276,7 +276,7 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .tick[aria-pressed="true"]{background:var(--good);color:#fff}
 .lg-foot{display:flex}.lg-foot .lg-add{flex:1}
 .lg-add{width:100%;padding:8px;margin-top:4px;font-size:13px;color:var(--accent);font-weight:500}
-#lgPicker input{width:100%;margin-top:10px;font:inherit;background:var(--input);border:0;border-radius:10px;padding:10px 12px;color:var(--ink)}
+#lgPicker input,.lg-swp input{width:100%;margin-top:10px;font:inherit;background:var(--input);border:0;border-radius:10px;padding:10px 12px;color:var(--ink)}
 .pick{display:grid;gap:4px;margin-top:8px;max-height:46vh;overflow:auto}
 .pick button{display:flex;justify-content:space-between;gap:10px;text-align:left;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--line);color:inherit}
 .pick b{font-weight:500}.pick span{font-size:12px;color:var(--ink3)}
@@ -1428,7 +1428,8 @@ const TEMPLATES={
  R:{name:"Strength (return)",ex:[["goblet",3,8],["splitsq",3,8],["soleus",3,15],["bridge",3,12],["copen",3,15]]},
  U:{name:"Upper body",ex:[["bench",3,8],["row",3,8],["ohp",3,8],["pullup",3,8],["curl",2,12],["pushdown",2,12]]},
 };
-function lifts(){return Object.entries(S.lifts||{}).filter(([,v])=>v&&!v.deleted).map(([id,v])=>({id,...v})).sort((a,b)=>String(a.date+a.start).localeCompare(String(b.date+b.start)));}
+function regEx(x){if(x&&x.cdef&&!EXI[x.id]){const e={t:"w",p:[],s:[],bw:0,...x.cdef,id:x.id};e.k=String(e.name||"").toLowerCase();EX.push(e);EXI[x.id]=e;}}
+function lifts(){return Object.entries(S.lifts||{}).filter(([,v])=>v&&!v.deleted).map(([id,v])=>{(v.ex||[]).forEach(regEx);return {id,...v};}).sort((a,b)=>String(a.date+a.start).localeCompare(String(b.date+b.start)));}
 function bodyW(){const ws=Object.values(S.log).filter(l=>l.weight).sort((a,b)=>a.date.localeCompare(b.date));return ws.length?+ws[ws.length-1].weight:90;}
 function setLoad(e,st,bw){if(!st)return 0;const r=+st.r||0,w=+st.w||0;if(e.t==="t"||e.t==="p")return 0;return r*(w+(e.bw?bw*e.bw:0));}
 function doneSets(x){return (x.sets||[]).filter(s=>s.done!==false&&(+s.r||0)>0);}
@@ -1566,13 +1567,13 @@ function parseQuick(txt){ // "squat 3x5 100, rdl 3x8@60; plank 3x40s"
     let best=null,bs=0; EX.forEach(e=>{let sc=0;q.split(/\s+/).forEach(t=>{if(t.length<2)return;if(e.k.includes(t))sc+=t.length;});if(e.k.startsWith(q))sc+=5;if(sc>bs){bs=sc;best=e;}});
     if(!best)return null; return {id:best.id,sets:Array.from({length:sets},()=>({w,r:reps,done:true}))};}).filter(Boolean);}
 function openLogger(L){
-  L=L||gymDraft(); if(!L)return; UI.gymL=L; const bw=bodyW();
+  L=L||gymDraft(); if(!L)return; UI.gymL=L; const bw=bodyW(); (L.ex||[]).forEach(regEx); let swapI=-1;
   const draw=()=>{const s=sessStats({...L,ex:L.ex.map(x=>({...x,sets:x.sets.filter(st=>st.done)}))});
     let x='<div class="lg-top"><button class="btn ghost" type="button" id="lgX">Close</button><input id="lgName" class="lg-name" value="'+esc(L.name)+'" aria-label="Session name"><button class="btn" type="button" id="lgFin">Finish</button></div>';
     x+='<div class="lg-strip"><span><b>'+fT(s.t)+'</b> lifted</span><span><b>'+s.sets+'</b> sets</span><label class="lg-min"><input id="lgMin" inputmode="numeric" value="'+(L.minSet?L.min:"")+'" placeholder="'+(L.t0&&!L.id?Math.floor((Date.now()-L.t0)/60000):(L.min||"0"))+'" aria-label="Duration in minutes"> min</label><span class="lg-when"><input type="date" id="lgDate" value="'+L.date+'" aria-label="Date"><input type="time" id="lgTime" value="'+esc(L.start||"")+'" aria-label="Start time"></span></div>';
     x+='<form class="lg-quick" id="lgQ"><input id="lgQi" placeholder="Quick add: squat 3x5 100, plank 3x40s" autocomplete="off" aria-label="Quick add"><button class="btn ghost" type="submit">Add</button></form>';
     x+=L.ex.map((xx,i)=>{const e=EXI[xx.id]||{name:xx.name||xx.id,t:"w",p:[],s:[]};const last=lastFor(xx.id,L.id);
-      return '<div class="lg-ex"><div class="lg-exh"><div><b>'+esc(e.name)+'</b><div class="sub">'+e.p.map(m=>MUSC[m]).join(", ")+(last?' · last '+doneSets(last.x).map(st=>fSet(e,st)).slice(0,3).join(", "):'')+'</div></div><button type="button" class="lg-rm" data-rmex="'+i+'" aria-label="Remove exercise">×</button></div>'+
+      return '<div class="lg-ex"><div class="lg-exh"><div><b>'+esc(e.name)+'</b><div class="sub">'+e.p.map(m=>MUSC[m]).join(", ")+(last?' · last '+doneSets(last.x).map(st=>fSet(e,st)).slice(0,3).join(", "):'')+'</div></div><span class="lg-acts"><button type="button" class="lg-sw" data-swap="'+i+'" aria-label="Swap exercise">Swap</button><button type="button" class="lg-rm" data-rmex="'+i+'" aria-label="Remove exercise">×</button></span></div>'+(swapI===i?'<div class="lg-swp" id="lgSw"><input id="lgSq" placeholder="Swap to… e.g. seated row" autocomplete="off"><div class="pick" id="lgSl"></div></div>':'')+
         '<div class="lg-hdr"><span>Set</span><span>'+(e.t==="t"?"":e.t==="b"?"+kg":"kg")+'</span><span>'+(e.t==="t"?"Seconds":"Reps")+'</span><span></span></div>'+
         xx.sets.map((st,j)=>'<div class="lg-set'+(st.done?' done':'')+'"><span class="mono">'+(j+1)+'</span>'+
           (e.t==="t"||e.t==="p"?'<span></span>':'<span class="stp"><button type="button" data-st="'+i+','+j+',w,-2.5" aria-label="Less weight">−</button><input inputmode="decimal" data-in="'+i+','+j+',w" value="'+(st.w||0)+'" aria-label="Weight"><button type="button" data-st="'+i+','+j+',w,2.5" aria-label="More weight">+</button></span>')+
@@ -1610,7 +1611,22 @@ function openLogger(L){
       if(st.done){const nx=L.ex[i].sets[j+1];if(nx&&!nx.done&&!(+nx.w)&&+st.w)nx.w=st.w; const e=EXI[L.ex[i].id]; keep();draw();rest(e&&(e.t==="p"||e.t==="t")?45:(e&&LOWER.some(m=>e.p.includes(m))&&e.t==="w"&&(+st.w>=60)?150:90));}else{keep();draw();}});
     document.querySelectorAll("#sheetRoot [data-addset]").forEach(b=>b.onclick=()=>{const xx=L.ex[+b.dataset.addset];const ls=xx.sets[xx.sets.length-1]||{w:0,r:8};xx.sets.push({w:ls.w,r:ls.r,done:false});keep();draw();});
     document.querySelectorAll("#sheetRoot [data-tickall]").forEach(b=>b.onclick=()=>{const xx=L.ex[+b.dataset.tickall];const v=!xx.sets.every(st=>st.done);xx.sets.forEach(st=>st.done=v);keep();draw();});
-    document.querySelectorAll("#sheetRoot [data-rmex]").forEach(b=>b.onclick=()=>{L.ex.splice(+b.dataset.rmex,1);keep();draw();});
+    document.querySelectorAll("#sheetRoot [data-rmex]").forEach(b=>b.onclick=()=>{L.ex.splice(+b.dataset.rmex,1);swapI=-1;keep();draw();});
+    document.querySelectorAll("#sheetRoot [data-swap]").forEach(b=>b.onclick=()=>{const i=+b.dataset.swap;swapI=swapI===i?-1:i;draw();if(swapI>=0){const q=$("#lgSq");q&&q.focus({preventScroll:true});}});
+    if(swapI>=0&&$("#lgSw")){const xx=L.ex[swapI], cur=EXI[xx.id]||{p:[],t:"w",name:xx.id};
+      const sc=e=>(e.p[0]===cur.p[0]?2:0)+(e.p.length===cur.p.length?1:0);const sim=EX.filter(e=>e.id!==xx.id&&e.t===cur.t&&e.p.some(m=>cur.p.includes(m))).sort((x,y)=>sc(y)-sc(x));
+      const list=q=>{q=(q||"").toLowerCase().trim();const items=(q?EX.filter(e=>e.id!==xx.id&&(e.k.includes(q)||e.p.some(m=>m.startsWith(q)))):sim).slice(0,12);
+        return items.map(e=>'<button type="button" data-to="'+e.id+'"><b>'+esc(e.name)+'</b><span>'+e.p.map(m=>MUSC[m]).join(", ")+'</span></button>').join("")+
+          (q&&!EX.some(e=>e.name.toLowerCase()===q)?'<button type="button" data-to="__custom"><b>Use “'+esc($("#lgSq").value.trim())+'”</b><span>New exercise, counts to '+(cur.p.map(m=>MUSC[m]).join(", ")||"no muscle group")+'</span></button>':'');};
+      const doSwap=to=>{let id=to;if(to==="__custom"){const nm=$("#lgSq").value.trim();if(!nm)return;id="c-"+nm.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+          const ex=EX.find(e=>e.id===id);if(!ex){xx.cdef={name:nm,t:cur.t,p:cur.p.slice(),s:(cur.s||[]).slice(),bw:cur.bw||0};regEx({id,cdef:xx.cdef});}}
+        const prevName=cur.name;const anyDone=xx.sets.some(st=>st.done);
+        if(!anyDone){const f=exFromLast(id,xx.sets.length,(xx.sets[0]&&xx.sets[0].r)||8);xx.sets=f.sets;}
+        xx.id=id;if(id.startsWith("c-")){const e=EXI[id];xx.cdef={name:e.name,t:e.t,p:e.p,s:e.s,bw:e.bw};}else delete xx.cdef;
+        swapI=-1;keep();draw();toast(prevName+" → "+EXI[id].name);};
+      const bs=()=>document.querySelectorAll("#lgSl [data-to]").forEach(b=>b.onclick=()=>doSwap(b.dataset.to));
+      $("#lgSl").innerHTML=list("");bs();$("#lgSq").oninput=e=>{$("#lgSl").innerHTML=list(e.target.value);bs();};
+      $("#lgSq").onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();const f=document.querySelector("#lgSl [data-to]");f&&f.click();}};}
     $("#lgQ").onsubmit=e=>{e.preventDefault();const add=parseQuick($("#lgQi").value);if(!add.length){toast("Couldn't match that. Try: squat 3x5 100");return;}add.forEach(a=>{const ex=L.ex.find(x=>x.id===a.id&&!x.sets.some(s=>s.done));if(ex)ex.sets=a.sets;else L.ex.push(a);});keep();draw();toast("Added "+add.map(a=>EXI[a.id].name).join(", "));};
     $("#lgPick").onclick=()=>{const p=$("#lgPicker");const recent=[...new Set(lifts().slice().reverse().flatMap(l=>(l.ex||[]).map(x=>x.id)))].slice(0,8);
       const list=q=>{q=(q||"").toLowerCase().trim();const items=q?EX.filter(e=>e.k.includes(q)||e.p.some(m=>m.startsWith(q))):recent.map(id=>EXI[id]).filter(Boolean).concat(EX.filter(e=>!recent.includes(e.id)));
@@ -1618,7 +1634,7 @@ function openLogger(L){
       p.innerHTML='<input id="lgPq" placeholder="Search exercise or muscle" autocomplete="off"><div class="pick" id="lgPl">'+list("")+'</div>';
       const bp=()=>p.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{L.ex.push(exFromLast(b.dataset.pick,3,8));keep();draw();setTimeout(()=>{const s=document.querySelector(".sheet.lg");s&&s.scrollTo({top:s.scrollHeight,behavior:"smooth"});},30);});
       bp(); const q=$("#lgPq"); q.focus(); q.oninput=()=>{$("#lgPl").innerHTML=list(q.value);bp();};};
-    $("#lgFin").onclick=async()=>{const ex=L.ex.map(x=>({id:x.id,sets:x.sets.filter(s=>s.done).map(s=>({w:+s.w||0,r:+s.r||0}))})).filter(x=>x.sets.length);
+    $("#lgFin").onclick=async()=>{const ex=L.ex.map(x=>({id:x.id,...(x.cdef?{cdef:x.cdef}:{}),sets:x.sets.filter(s=>s.done).map(s=>({w:+s.w||0,r:+s.r||0}))})).filter(x=>x.sets.length);
       if(!ex.length){toast("Tick at least one set first");return;}
       if(!S.db){toast("Saving is unavailable right now");return;}
       const id=L.id||(L.date+"-"+String(L.start||"0000").replace(":",""));
