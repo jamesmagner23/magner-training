@@ -262,7 +262,7 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .lg-quick input{flex:1;min-width:0;font:inherit;background:var(--input);border:1px solid transparent;border-radius:10px;padding:10px 12px;color:var(--ink)}
 .lg-quick input:focus{border-color:var(--accent);outline:0}
 .lg-ex{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px;margin-top:10px}
-.lg-exh{display:flex;justify-content:space-between;gap:8px}.lg-acts{display:flex;gap:4px;align-items:flex-start;flex:none}.lg-sw{font:inherit;font-size:12px;color:var(--acc);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer}.lg-swp{margin:10px 0 4px}.lg-swp input{width:100%;margin-bottom:6px}.lg-exh b{font-weight:500}
+.lg-exh{display:flex;justify-content:space-between;gap:8px}.lg-acts{display:flex;gap:4px;align-items:flex-start;flex:none}.lg-sw{font:inherit;font-size:12px;color:var(--accent);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 10px;cursor:pointer}.lg-swp{margin:10px 0 4px}.lg-swp input{width:100%;margin-bottom:6px}.lg-exh b{font-weight:500}
 .lg-rm{width:28px;height:28px;border-radius:8px;color:var(--ink3);font-size:18px}
 .lg-hdr,.lg-set{display:grid;grid-template-columns:28px minmax(0,1.2fr) minmax(0,1fr) 44px;gap:8px;align-items:center}
 .lg-hdr{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-top:10px;padding:0 0 4px}
@@ -357,7 +357,7 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 /* Forms */
 .field{display:grid;gap:7px;margin-top:14px}
 .field label,.flabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
-input[type=text],input[type=number],input[type=email],input[type=password],textarea,select{font:inherit;font-size:15px;color:var(--ink);background:var(--input);border:1px solid transparent;border-radius:10px;padding:10px 12px;width:100%}
+input:not([type]),input[type=date],input[type=time],input[type=text],input[type=number],input[type=email],input[type=password],textarea,select{font:inherit;font-size:15px;color:var(--ink);background:var(--input);border:1px solid transparent;border-radius:10px;padding:10px 12px;width:100%}
 textarea{min-height:64px;resize:vertical}
 .scale{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px}
 .scale button{font-family:var(--mono);font-size:12px;padding:8px 0;border-radius:7px;background:var(--input);color:var(--ink2)}
@@ -373,6 +373,11 @@ textarea{min-height:64px;resize:vertical}
 /* Sheet */
 .scrim{position:fixed;inset:0;z-index:30;background:rgba(18,16,13,.42);display:flex;align-items:flex-end;justify-content:center}
 @media (min-width:760px){.scrim{align-items:center}}
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;line-height:1;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:40;cursor:pointer;display:grid;place-items:center;padding:0 0 3px}
+.fab:active{transform:scale(.94)}
+.qa-sp{display:flex;flex-wrap:wrap;gap:6px}.qa-sp button{font:inherit;font-size:13px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:inherit;cursor:pointer}.qa-sp button[aria-pressed=true]{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}
+#sheetRoot:not(:empty)+.fab{display:none}
+input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appearance:none}
 .sheet{background:var(--bg);width:100%;max-width:620px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:14px 16px calc(24px + env(safe-area-inset-bottom,0px))}
 @media (min-width:760px){.sheet{border-radius:18px}}
 .sheet-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
@@ -395,7 +400,7 @@ textarea{min-height:64px;resize:vertical}
 .msg.me{justify-self:end;background:var(--dark);color:var(--on);border-bottom-right-radius:4px}
 .msg.bot{justify-self:start;background:var(--sunken);color:var(--ink);border-bottom-left-radius:4px}
 .msg-t{white-space:pre-wrap}
-.dchks{display:flex;flex-wrap:wrap;gap:6px}.dchk{display:inline-flex}.dchk input{position:absolute;opacity:0;pointer-events:none}#setupF input:not([type=checkbox]),#setupF textarea,#setupF select{width:100%;box-sizing:border-box;min-width:0}#setupF .grid2>*{min-width:0}.dchk span{padding:7px 11px;border:1px solid var(--line);border-radius:999px;font-size:13px;cursor:pointer}.dchk input:checked+span{background:var(--acc);color:#fff;border-color:var(--acc)}
+.dchks{display:flex;flex-wrap:wrap;gap:6px}.dchk{display:inline-flex}.dchk input{position:absolute;opacity:0;pointer-events:none}#setupF input:not([type=checkbox]),#setupF textarea,#setupF select{width:100%;box-sizing:border-box;min-width:0}#setupF .grid2>*{min-width:0}.dchk span{padding:7px 11px;border:1px solid var(--line);border-radius:999px;font-size:13px;cursor:pointer}.dchk input:checked+span{background:var(--accent);color:#fff;border-color:var(--accent)}
 .chat .composer{margin:0 0 12px}
 .older summary{cursor:pointer;list-style:none}.older summary::-webkit-details-marker{display:none}
 .old-n{padding:12px 0;border-top:1px solid var(--line)}.old-n:first-of-type{border-top:0;margin-top:8px}.old-n b{font-weight:500;display:block;margin:2px 0}
@@ -423,9 +428,11 @@ textarea{min-height:64px;resize:vertical}
 <div class="hr"></div><div class="eb">First time, or no password yet</div><div class="sub" style="margin-top:6px">Tap below, then tap Log In in the email (don't press and hold). It opens in Safari, signs you in there and asks you to set a password. Then come back to the home screen app and sign in with it.</div><button class="btn ghost block" id="siLink" type="button" style="margin-top:10px">Email me a sign-in link</button></div></section>
 <main class="wrap" id="app"><div class="empty">Loading your plan</div></main>
 <div id="sheetRoot"></div>
+<button type="button" class="fab" id="fab" aria-label="Log an activity">+</button>
 <div id="toastRoot"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>/* Send other athletes' sign-in links to their own app */(function(){try{const h=location.hash;if(!/access_token=/.test(h))return;const t=new URLSearchParams(h.slice(1)).get("access_token");const em=JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).email;const map={"info@danielshinners.com.au":"daniel/"};if(map[em]&&!location.pathname.includes(map[em]))location.replace(location.pathname.replace(/[^/]*$/,"")+map[em]+h);}catch(e){}})();</script>
 <script>
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
@@ -851,6 +858,7 @@ function tssOf(a){
   else if(k==="swim")IF=ifHr(12)??.70;
   else if(k==="gym")IF=a.avgHr?Math.min(.85,a.avgHr/L):.55;
   else IF=/walk|hike/i.test(String(a.type||"")+String(a.title||""))?Math.min(.55,ifHr(0)??.5):(ifHr(0)??.55);
+  if(!a.avgHr&&+a.rpe&&!(k==="run"&&a.km>0))IF=Math.min(1.05,.45+.055*(+a.rpe));
   return h*IF*IF*100;
 }
 function dailyLoad(){
@@ -1216,6 +1224,35 @@ function openDay(date){
       toast("Saved");closeSheet();}
     catch(err){toast("Couldn't save. Try again.");} finally{b.disabled=false;b.textContent="Save";}};
 }
+const QA_SPORTS=[["Run","Run","run"],["Basketball","Basketball","other"],["Soccer","Soccer","other"],["Gym","WeightTraining","other"],["Ride","Ride","other"],["Swim","Swim","other"],["Walk","Walk","other"],["Tennis","Tennis","other"],["Padel","Padel","other"],["Surf","Surf","other"],["Other","Workout","other"]];
+function openQuickAdd(){
+  const nowT=new Date().toTimeString().slice(0,5); let sp=null, rpe=0;
+  const x='<div class="sheet-top"><span class="eb">Log an activity</span><button class="btn ghost" id="shX" type="button">Close</button></div>'+
+   '<form id="qaF" class="stack" style="gap:14px;margin-top:6px">'+
+   '<div class="field"><span class="flabel">What</span><div class="qa-sp">'+QA_SPORTS.map((q,i)=>'<button type="button" data-qa="'+i+'" aria-pressed="false">'+q[0]+'</button>').join("")+'</div></div>'+
+   '<div class="field" id="qaGym" style="display:none"><button class="btn ghost" type="button" id="qaLift">Log sets and reps instead</button></div>'+
+   '<div class="field"><label for="qaName">Name (optional)</label><input id="qaName" placeholder="e.g. Club game, social hit"></div>'+
+   '<div class="grid2"><div class="field"><label for="qaD">Date</label><input id="qaD" type="date" value="'+TODAY+'" max="'+TODAY+'"></div><div class="field"><label for="qaT">Start</label><input id="qaT" type="time" value="'+nowT+'"></div></div>'+
+   '<div class="grid2"><div class="field"><label for="qaMin">Minutes</label><input id="qaMin" type="number" inputmode="numeric" min="1" required></div><div class="field" id="qaKmF"><label for="qaKm">Distance km</label><input id="qaKm" type="number" inputmode="decimal" step="0.01"></div></div>'+
+   '<div class="field"><span class="flabel">How hard (1 to 10)</span><div class="scale" id="qaR">'+[1,2,3,4,5,6,7,8,9,10].map(i=>'<button type="button" data-r="'+i+'" aria-pressed="false">'+i+'</button>').join("")+'</div><span class="sub">3 easy, 5 steady, 7 hard, 9 flat out.</span></div>'+
+   '<div class="field"><label for="qaHr">Average heart rate (optional)</label><input id="qaHr" type="number" inputmode="numeric"></div>'+
+   '<div class="field"><label for="qaN">Note</label><input id="qaN" placeholder="How it went"></div>'+
+   '<button class="btn" type="submit" id="qaGo">Save</button><div class="sub" id="qaMsg"></div></form>';
+  $("#sheetRoot").innerHTML='<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="Log an activity">'+x+'</div></div>';
+  $("#scrim").onclick=e=>{if(e.target.id==="scrim")closeSheet();}; $("#shX").onclick=closeSheet;
+  document.querySelectorAll("#qaF [data-qa]").forEach(b=>b.onclick=()=>{sp=QA_SPORTS[+b.dataset.qa];document.querySelectorAll("#qaF [data-qa]").forEach(o=>o.setAttribute("aria-pressed",o===b));
+    $("#qaGym").style.display=sp[0]==="Gym"?"":"none";$("#qaKmF").style.visibility=/Run|Ride|Swim|Walk/.test(sp[0])?"visible":"hidden";});
+  document.querySelectorAll("#qaR [data-r]").forEach(b=>b.onclick=()=>{rpe=+b.dataset.r;document.querySelectorAll("#qaR [data-r]").forEach(o=>o.setAttribute("aria-pressed",o===b));});
+  $("#qaLift").onclick=()=>{const L=gymDraft()||newSession("A");L.date=$("#qaD").value||TODAY;openLogger(L);};
+  $("#qaF").onsubmit=async e=>{e.preventDefault();const msg=$("#qaMsg");if(!sp){msg.textContent="Pick what you did.";return;}
+    const min=+$("#qaMin").value;if(!(min>0)){msg.textContent="Add the minutes.";return;}
+    const date=$("#qaD").value||TODAY, t=($("#qaT").value||"12:00").replace(":",""), km=+$("#qaKm").value||0, hr=+$("#qaHr").value||0;
+    const doc={date,start:date+"T"+t,km:Math.round(km*1000)/1000,sec:min*60,el:min*60,title:$("#qaName").value.trim()||sp[0],type:sp[1],sport:sp[2],source:"manual"};
+    if(rpe)doc.rpe=rpe;if(hr)doc.avgHr=hr;const note=$("#qaN").value.trim();if(note)doc.note=note;
+    const id=date.replace(/-/g,"")+"T"+t+(sp[2]==="run"?"-"+Math.round(km*10):"-m"+min);
+    $("#qaGo").disabled=true;try{await S.db.doc("runs/"+id).set(doc);toast(sp[0]+" logged · "+min+" min");closeSheet();}catch(err){msg.textContent="Couldn't save: "+err.message;$("#qaGo").disabled=false;}};
+}
+$("#fab").onclick=openQuickAdd;
 function closeSheet(){$("#sheetRoot").innerHTML="";}
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeSheet();});
 
@@ -1701,6 +1738,7 @@ function render(){
   if(S.db)passwordPrompt();
   $("#nav").innerHTML=TABS.map(t=>'<button type="button" data-tab="'+t[0]+'" aria-current="'+(UI.tab===t[0]?"page":"false")+'">'+t[1]+'</button>').join("");
   const gs=S.settings.setup||{};RACE_DATE=gs.goalDate||"2099-01-01";$("#raceChip").style.display=gs.goalDate?"":"none";$("#raceChip").innerHTML=esc(gs.goalShort||"Goal")+' <b>'+Math.max(0,dBetween(TODAY,RACE_DATE))+'d</b>';
+  $("#fab").style.display=S.db?"":"none";
   bind($("#app")); scrollTo(0,y);
 }
 function setTab(t){UI.tab=t;UI.sel=null;try{localStorage.setItem("dt-tab",t);}catch(e){}closeSheet();render();scrollTo(0,0);}
