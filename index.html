@@ -1134,7 +1134,8 @@ function openDay(date){
   x+=sessionCheckHtml(date);
   x+='<form class="card pad" id="lf" style="margin-top:12px"><div class="eb">Morning check</div><div class="field"><label for="lfW">Weight (kg), after waking, before food</label><input id="lfW" type="number" step="0.1" inputmode="decimal" placeholder="e.g. 89.4" value="'+(lg.weight||"")+'"></div><div class="hr"></div><div class="eb">Run</div>'+
     '<div class="sw-row"><span>Completed</span><button type="button" class="tog" role="switch" id="lfDone" aria-checked="'+(!!lg.done)+'" aria-label="Run completed"></button></div>'+
-    '<div class="field"><label for="lfShoe">Shoes</label><input id="lfShoe" type="text" list="shoeList" placeholder="Pick or type a pair" value="'+esc(lg.shoe||"")+'"><datalist id="shoeList">'+shoeNames().map(n=>'<option value="'+esc(n)+'"></option>').join("")+'</datalist></div>'+
+    (()=>{const last=Object.values(S.log).filter(l=>l.shoe).sort((a,b)=>b.date.localeCompare(a.date));const order=[...new Set(last.map(l=>l.shoe).concat(shoeNames()))];const cur=lg.shoe||(last[0]&&last[0].shoe)||"";
+      return '<div class="field"><label for="lfShoe">Shoes</label><select id="lfShoe" onchange="var n=document.getElementById(\'lfShoeNew\');n.style.display=this.value===\'__new\'?\'block\':\'none\';if(this.value===\'__new\')n.focus()"><option value="">No shoes / not a run</option>'+order.map(n=>'<option'+(n===cur?' selected':'')+'>'+esc(n)+'</option>').join("")+'<option value="__new">+ New pair</option></select><input id="lfShoeNew" type="text" placeholder="Name the new pair" style="display:none;margin-top:8px"></div>';})()+
     '<div class="field"><span class="flabel">Effort (RPE)</span>'+sc("rpe",1,10,lg.rpe||0)+'<span class="sub">Easy days sit at 3 to 4. Threshold 7 to 8.</span></div>'+
     '<div class="field"><span class="flabel">Foot pain</span>'+sc("foot",0,6,lg.foot==null?-1:lg.foot,"6+")+'<span class="sub">0 to 3 is fine. 4+ or worse next morning: drop back.</span></div>'+
     '<div class="field"><label for="lfKm">Distance if not imported (km)</label><input id="lfKm" type="number" step="0.1" value="'+(lg.manualKm||"")+'"></div>'+
@@ -1165,7 +1166,7 @@ function openDay(date){
   $("#nigAdd",f).onclick=()=>{const prev=lastNiggles(date);st.niggles.push(prev[st.niggles.length]?{...prev[st.niggles.length]}:{area:"Foot",side:"Left",score:2});drawN();};
   ["rpe","foot"].forEach(k=>f.querySelectorAll("[data-"+k+"]").forEach(b=>b.onclick=()=>{st[k]=+b.dataset[k];f.querySelectorAll("[data-"+k+"]").forEach(y=>y.setAttribute("aria-pressed",y===b));}));
   f.onsubmit=async e=>{e.preventDefault(); if(!S.db){toast("Saving is unavailable right now");return;}
-    st.lifts=$("#lfLifts",f).value.trim(); st.note=$("#lfN",f).value.trim(); st.xType=$("#lfXT",f).value; st.xMin=+$("#lfXM",f).value||0; st.heatType=$("#lfHT",f).value; st.shoe=$("#lfShoe",f).value.trim(); st.heatMin=+$("#lfHM",f).value||0; const mk=+$("#lfKm",f).value||0; st.manualKm=mk;
+    st.lifts=$("#lfLifts",f).value.trim(); st.note=$("#lfN",f).value.trim(); st.xType=$("#lfXT",f).value; st.xMin=+$("#lfXM",f).value||0; st.heatType=$("#lfHT",f).value; st.shoe=$("#lfShoe",f).value==="__new"?$("#lfShoeNew",f).value.trim():$("#lfShoe",f).value; st.heatMin=+$("#lfHM",f).value||0; const mk=+$("#lfKm",f).value||0; st.manualKm=mk;
     st.niggles=(st.niggles||[]).filter(n=>n&&n.area); {const wv=parseFloat($("#lfW",f).value); if(wv>40&&wv<200)st.weight=wv; else delete st.weight;} st.date=date; st.updated=new Date().toISOString(); for(const k of Object.keys(st)) if(st[k]===undefined) delete st[k];
     const b=$("#lfSave",f); b.disabled=true; b.textContent="Saving";
     try{await S.db.doc("log/"+date).set(st);
