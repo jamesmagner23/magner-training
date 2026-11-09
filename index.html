@@ -431,7 +431,6 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 <div id="toastRoot"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script>/* Send other athletes' sign-in links to their own app */(function(){try{const h=location.hash;if(!/access_token=/.test(h))return;const t=new URLSearchParams(h.slice(1)).get("access_token");const em=JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/"))).email;const map={"info@danielshinners.com.au":"daniel/"};if(map[em]&&!location.pathname.includes(map[em]))location.replace(location.pathname.replace(/[^/]*$/,"")+map[em]+h);}catch(e){}})();</script>
 <script>
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
