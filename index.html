@@ -373,13 +373,20 @@ textarea{min-height:64px;resize:vertical}
 /* Sheet */
 .scrim{position:fixed;inset:0;z-index:30;background:rgba(18,16,13,.42);display:flex;align-items:flex-end;justify-content:center}
 @media (min-width:760px){.scrim{align-items:center}}
-.mtg{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 4px;font-size:13px;color:var(--ink-2,inherit)}.mtg b{font-family:var(--mono);font-weight:500}
-.mday summary{list-style:none;cursor:pointer}.mday summary::-webkit-details-marker{display:none}.mday{margin-bottom:10px}
-.mrow{display:grid;grid-template-columns:96px 1fr auto;gap:10px;padding:11px 0;border-top:1px solid var(--line);align-items:start}.mrow:first-child{border-top:0}.mslot{padding-top:2px}.mbody b{font-weight:500}.mright{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.mtag{font-size:11px;font-family:var(--mono);color:var(--accent);margin-left:4px}
-.mtbl td,.mtbl th{font-size:12.5px;vertical-align:top;padding-right:8px}.mtbl td:first-child{width:36px}.mtbl tr.is-today td{color:var(--accent)}
+.mcut{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.mbig{font-size:26px;line-height:1.1}
+.mweigh{display:flex;gap:8px;margin-top:12px}.mweigh input{flex:1;min-width:0}
+.mweek{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px}
+.mwd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 8px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:inherit;font:inherit;cursor:pointer;position:relative}
+.mwd b{font-size:17px;font-weight:500}.mwd .sub{font-size:10.5px}.mwd.is-today{border-color:var(--accent)}.mwd.sel{background:var(--dark);color:var(--on)}.mwd.sel .sub,.mwd.sel .eb{color:var(--on);opacity:.8}
+.mdot{width:6px;height:6px;border-radius:50%;margin-top:3px;background:var(--line)}.mdot.t-train{background:#8fae84}.mdot.t-key{background:var(--accent)}.mdot.t-long{background:#d9a441}
+.mtg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 6px}.mtg>div{background:var(--sunken);border-radius:10px;padding:9px 10px}.mtg b{display:block;font-size:18px;font-weight:500}.mtg span{font-size:11px;color:var(--ink2)}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px 0;border-top:1px solid var(--line);align-items:start}.mrow:first-child{border-top:0}.mslot{grid-column:1/-1}.mbody b{font-weight:500}
+.mright{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12.5px}.mwhere{font-size:11px;color:var(--accent);margin:2px 0}.malt{display:block;margin-top:3px;color:var(--ink)}
+.mtag{font-size:10.5px;font-family:var(--mono);color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:1px 6px;margin-left:4px;white-space:nowrap}
+.mpick{display:grid;gap:6px;padding:4px 0 12px}.mpick button{text-align:left;font:inherit;color:inherit;background:var(--sunken);border:1px solid transparent;border-radius:10px;padding:9px 11px;cursor:pointer;display:flex;flex-direction:column;gap:2px}.mpick button.on{border-color:var(--accent)}.mpick b{font-weight:500}
+.mtot{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;border-top:1px solid var(--line);padding-top:12px;margin-top:4px;font-size:13px}.mtot b{font-weight:500}
+.mwtab{display:grid;margin-top:8px}.mwr{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;text-align:left;font:inherit;color:inherit;background:none;border:0;border-top:1px solid var(--line);padding:10px 0;cursor:pointer}.mwr:first-child{border-top:0}.mwr b{font-weight:500;display:block}.mwr.is-today .eb{color:var(--accent)}
 .shopi{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}.shopi input{width:18px;height:18px;accent-color:var(--accent)}.shopi input:checked+span{text-decoration:line-through;opacity:.5}
-@media(max-width:520px){.mrow{grid-template-columns:1fr auto}.mslot{grid-column:1/-1;padding:0}.mtbl{display:block;overflow-x:auto}}
 .fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;line-height:1;box-shadow:0 8px 24px rgba(0,0,0,.35);z-index:40;cursor:pointer;display:grid;place-items:center;padding:0 0 3px}
 .fab:active{transform:scale(.94)}
 .qa-sp{display:flex;flex-wrap:wrap;gap:6px}.qa-sp button{font:inherit;font-size:13px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:none;color:inherit;cursor:pointer}.qa-sp button[aria-pressed=true]{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important}
@@ -772,132 +779,179 @@ function vRuns(){
   h+='</section>';
 }
 
-/* ---------- Meals ---------- */
-// i: shopping items [group, name, qty, unit]; per portion. m: [protein g, carbs g, fat g]
-const LUNCHES={
-  tunawrap:{n:"Tuna wrap",d:"2 tins tuna, 2 wraps, salad, a little mayo or avo",m:[55,50,15],i:[["Protein","Tuna tins (95 g)",2,""],["Other","Wraps",2,""],["Other","Salad mix",1,"bag/3"]]},
-  tunarice:{n:"Tuna on rice",d:"2 tins tuna, microwave rice pouch, half an avocado, soy",m:[55,60,18],i:[["Protein","Tuna tins (95 g)",2,""],["Other","Microwave rice pouch",1,""],["Fruit","Avocado",0.5,""]]},
-  sushi:{n:"Takeaway sushi",d:"Salmon, tuna or chicken rolls plus sashimi and edamame. Skip tempura and mayo rolls.",m:[50,80,15],i:[]},
-  omelette:{n:"4 egg omelette",d:"4 eggs, ham, cheese, spinach, 2 slices toast",m:[50,30,35],i:[["Dairy","Eggs",4,""],["Protein","Shaved ham",60,"g"],["Dairy","Cheese",30,"g"],["Other","Bread",2,"slices"],["Other","Baby spinach",1,"bag/4"]]},
+/* ---------- Meals (cut) ---------- */
+// m: [protein g, carbs g, fat g]. f:1 = takeaway. i: shopping [group, item, qty, unit] (home options only).
+// alt: carbs to add on training days {t: text, m:[p,c,f], i:[...]}
+const MB={
+  yog:{n:"High-protein yoghurt bowl",w:"Woolies / Coles",d:"2 tubs Chobani Fit or YoPro, a handful of berries, 20 g granola",m:[33,35,4],i:[["Dairy","Chobani Fit or YoPro tubs",2,""],["Fruit","Frozen berries",100,"g"],["Other","Granola",20,"g"]]},
+  oats:{n:"Protein oats",w:"Home",d:"50 g quick oats cooked in water or skim, 1 scoop whey, berries",m:[33,42,6],alt:{t:"Key day: 70 g oats and a banana",m:[3,40,2],i:[["Fruit","Bananas",1,""],["Other","Quick oats",20,"g"]]},i:[["Other","Quick oats",50,"g"],["Other","Whey protein",1,"scoop"],["Fruit","Frozen berries",80,"g"]]},
+  eggs:{n:"Eggs and whites on toast",w:"Home",d:"2 eggs plus 100 ml liquid egg whites, spinach, 1 slice Helga's Lower Carb or wholemeal",m:[28,14,11],i:[["Dairy","Eggs",2,""],["Dairy","Liquid egg whites",100,"ml"],["Other","Helga's Lower Carb bread",1,"slices"],["Other","Baby spinach",1,"bag/5"]]},
+  go:{n:"Protein milk and banana",w:"Servo, Woolies / Coles",d:"Rokeby Farms Whole Protein or a YoPro drink, plus a banana. For rushed mornings.",m:[30,40,5],i:[["Dairy","Rokeby Farms protein milk",1,""],["Fruit","Bananas",1,""]]},
 };
-const DINNERS={
-  steak:{n:"Steak, salad, potatoes",d:"250 g steak (rump or porterhouse), big salad, roast or air-fried potatoes",m:[65,45,25],carbs:"potatoes",i:[["Protein","Steak",250,"g"],["Other","Potatoes",300,"g"],["Other","Salad mix",1,"bag/3"]],left:"Leftover steak wrap"},
-  schnitzel:{n:"Air-fried chicken schnitzel",d:"Chicken schnitzel in the air fryer, salad or veg, rice or potatoes",m:[65,50,18],carbs:"rice or potatoes",i:[["Protein","Chicken schnitzels",250,"g"],["Other","Rice (uncooked)",90,"g"],["Other","Frozen veg or salad",1,"serve"]],left:"Leftover schnitzel wrap"},
-  sausages:{n:"Chicken sausages, eggs and veg",d:"4 lean or chicken sausages, 2 eggs, veg. Training day: make it egg fried rice.",m:[60,45,30],carbs:"egg fried rice",i:[["Protein","Chicken sausages",4,""],["Dairy","Eggs",2,""],["Other","Rice (uncooked)",90,"g"],["Other","Frozen veg or salad",1,"serve"]],left:"Leftover sausage and egg fried rice"},
-  mince:{n:"Beef mince rice bowl",d:"250 g lean mince with taco spice, rice, beans, salsa, lettuce",m:[60,60,22],carbs:"rice",i:[["Protein","Lean beef mince",250,"g"],["Other","Rice (uncooked)",90,"g"],["Other","Tin of beans",0.5,""],["Other","Salsa",1,"jar/4"]],left:"Leftover mince burrito"},
+const ML={
+  prep:{n:"Chicken, rice and salad kit",w:"Meal prep",d:"180 g cooked chicken breast, half a microwave rice pouch, half a Coles or Woolies salad kit (go easy on the dressing)",m:[55,40,12],i:[["Protein","Chicken breast",200,"g"],["Other","Microwave rice pouch (250 g)",0.5,""],["Other","Salad kit",0.5,""]]},
+  chook:{n:"BBQ chook salad",w:"Woolies / Coles hot chicken",d:"Breast meat off a hot roast chicken (about 200 g), bagged salad, balsamic. Add a wholemeal wrap on training days.",m:[58,6,10],alt:{t:"Training day: add a wholemeal wrap",m:[5,25,3],i:[["Other","Wholemeal wraps",1,""]]},i:[["Protein","Hot roast chicken",0.5,""],["Other","Bagged salad",1,"bag/3"]]},
+  tuna:{n:"Tuna rice cup",w:"Home or desk",d:"2 tins Sirena tuna in springwater, a microwave brown rice cup, cucumber, soy and chilli",m:[46,38,5],i:[["Protein","Tuna in springwater (95 g)",2,""],["Other","Microwave brown rice cups",1,""]]},
+  ready:{n:"Ready meal",w:"My Muscle Chef or Youfoodz, Woolies / Coles fridge",d:"Pick one with 40 g+ protein and under 500 kcal. Add a side salad if you're hungry.",m:[42,40,12],i:[["Other","Ready meals (40 g+ protein)",1,""]]},
+  gyg:{n:"GYG naked burrito bowl",w:"Guzman y Gomez",f:1,d:"Chicken, black beans, salsa, lettuce, jalapeños. Skip cheese and sour cream, half the rice.",m:[45,50,14]},
+  nandos:{n:"Nando's quarter chicken breast",w:"Nando's",f:1,d:"Quarter chicken (breast) with a garden salad. Regular spicy rice on training days only.",m:[50,8,12],alt:{t:"Training day: regular spicy rice",m:[4,45,5]}},
+  sushi:{n:"Sashimi and hand rolls",w:"Sushi Hub / Sushi Sushi",f:1,d:"8 pieces salmon or tuna sashimi, 2 chicken or salmon hand rolls, edamame. No tempura or mayo rolls.",m:[44,50,14]},
+  schnitz:{n:"Grilled chicken and Greek salad",w:"Schnitz",f:1,d:"Grilled chicken breast (not crumbed) with a Greek salad. Skip the chips.",m:[55,12,18]},
+  subway:{n:"Subway chicken or turkey sub",w:"Subway",f:1,d:"6 inch on wholemeal, double meat, all the salad, sweet chilli or mustard, no mayo or cheese",m:[40,45,7]},
+  left:{n:"Leftovers from last night",w:"Home",d:"Cook a double portion at dinner and take it in.",m:[0,0,0]},
 };
-const BREAKFASTS={
-  oats:{n:"Oats with whey and banana",d:"80 g oats, 1 scoop whey, milk, banana. Best on training days.",m:[40,85,10],i:[["Other","Rolled oats",80,"g"],["Other","Protein powder",1,"scoop"],["Fruit","Bananas",1,""],["Dairy","Milk",300,"ml"]]},
-  eggs:{n:"Eggs and ham on toast",d:"3 eggs, a couple of slices of ham, 2 slices sourdough",m:[32,30,20],i:[["Dairy","Eggs",3,""],["Protein","Shaved ham",50,"g"],["Other","Bread",2,"slices"]]},
-  yog:{n:"Greek yoghurt bowl",d:"250 g Greek yoghurt, berries, a handful of granola",m:[28,45,8],i:[["Dairy","Greek yoghurt",250,"g"],["Fruit","Berries (frozen ok)",80,"g"],["Other","Granola",40,"g"]]},
+const MD={
+  bolog:{n:"Lean beef bolognese",w:"Home",d:"200 g Heart Smart / 5 star lean mince, passata, grated zucchini and mushroom. Over 60 g pasta on training days, zucchini noodles on rest days.",m:[48,18,14],alt:{t:"Training day: 60 g pasta",m:[8,42,1],i:[["Other","Pasta",60,"g"]]},i:[["Protein","5 star lean beef mince",200,"g"],["Other","Passata",0.5,"jar"],["Other","Zucchini and mushrooms",1,"serve"]]},
+  stir:{n:"Chicken stir-fry",w:"Home",d:"200 g chicken breast, a bag of frozen stir-fry veg, light soy and oyster sauce. Rice on training days.",m:[50,15,7],alt:{t:"Training day: half a rice pouch",m:[3,38,2],i:[["Other","Microwave rice pouch (250 g)",0.5,""]]},i:[["Protein","Chicken breast",200,"g"],["Other","Frozen stir-fry veg",0.5,"bag"]]},
+  salmon:{n:"Salmon, potatoes and greens",w:"Home",d:"150 g salmon fillet in the air fryer, steamed greens. Baby potatoes on training days.",m:[38,8,20],alt:{t:"Training day: 200 g baby potatoes",m:[4,30,0],i:[["Other","Baby potatoes",200,"g"]]},i:[["Protein","Salmon fillets",150,"g"],["Other","Steam-fresh veg",1,"bag/2"]]},
+  steak:{n:"Lean steak and veg",w:"Home",d:"200 g trimmed rump or eye fillet, steam-fresh veg, a big salad. Potatoes on training days.",m:[52,10,14],alt:{t:"Training day: 200 g potatoes",m:[4,30,0],i:[["Other","Potatoes",200,"g"]]},i:[["Protein","Rump or eye fillet",200,"g"],["Other","Steam-fresh veg",1,"bag/2"]]},
+  souv:{n:"Chicken souvlaki wraps",w:"Home",d:"200 g chicken breast with oregano and lemon (or Coles souvlaki skewers), Mountain Bread wraps, light tzatziki, tomato, lettuce",m:[52,30,10],i:[["Protein","Chicken breast or souvlaki skewers",200,"g"],["Other","Mountain Bread wraps",2,""],["Dairy","Light tzatziki",1,"tub/4"]]},
+  scb:{n:"San choy bow",w:"Home",d:"250 g lean chicken or turkey mince, water chestnuts, ginger, soy, iceberg lettuce cups. Rice on training days.",m:[52,10,12],alt:{t:"Training day: half a rice pouch",m:[3,38,2],i:[["Other","Microwave rice pouch (250 g)",0.5,""]]},i:[["Protein","Lean chicken or turkey mince",250,"g"],["Other","Iceberg lettuce",0.5,""]]},
+  souvshop:{n:"Souvlaki plate, no chips",w:"Local souvlaki shop",f:1,d:"Chicken souvlaki plate with salad and a little tzatziki. Skip the chips, eat half the pita.",m:[50,30,18]},
 };
-const BREAK_KEYS=Object.keys(BREAKFASTS);
-const LUNCH_KEYS=Object.keys(LUNCHES), DINNER_KEYS=Object.keys(DINNERS);
-const SNACK={
-  mid:{n:"Greek yoghurt or a shake",d:"200 g Greek yoghurt or 1 scoop protein in milk",m:[30,12,4],i:[["Dairy","Greek yoghurt",200,"g"]]},
-  arvo:{n:"Greek yoghurt and berries",d:"200 g Greek yoghurt, a handful of berries",m:[25,20,5],i:[["Dairy","Greek yoghurt",200,"g"],["Fruit","Berries (frozen ok)",80,"g"]]},
-  arvoEggs:{n:"2 boiled eggs",d:"2 boiled eggs, salt and pepper",m:[13,1,10],i:[["Dairy","Eggs",2,""]]},
-  pre:{n:"Banana and coffee",d:"Banana (or mango) 30 to 90 min before the session",m:[1,27,0],i:[["Fruit","Bananas",1,""]]},
-  post:{n:"Shake and fruit",d:"Protein shake plus a piece of fruit within an hour, or eggs on toast",m:[30,30,3],i:[["Other","Protein powder",1,"scoop"],["Fruit","Bananas",1,""]]},
-  top:{n:"Evening top-up",d:"Shake or 200 g Greek yoghurt to close the protein gap",m:[30,10,3],i:[["Other","Protein powder",1,"scoop"]]},
+const MS={
+  yopro:{n:"YoPro or Chobani Fit",d:"A pouch or tub",m:[16,8,0],i:[["Dairy","YoPro pouches",1,""]]},
+  bar:{n:"Protein bar",d:"Barebells or similar, around 200 kcal and 20 g protein",m:[20,18,8],i:[["Other","Protein bars",1,""]]},
+  jerky:{n:"Beef jerky",d:"50 g, low sugar",m:[20,6,1],i:[["Protein","Beef jerky (50 g)",1,""]]},
+  eggs:{n:"2 boiled eggs",d:"Boil 6 on Sunday",m:[13,1,10],i:[["Dairy","Eggs",2,""]]},
 };
+const MB_K=Object.keys(MB), ML_K=Object.keys(ML), MD_K=Object.keys(MD), MS_K=Object.keys(MS);
 function mealsDoc(date){return (S.meals&&S.meals[date])||{};}
+function dateHash(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))>>>0;return h;}
 function mealDayType(date){
   const w=weekDocOf(date), d=w&&w.w.days[w.i];
-  const acts=Object.values(S.runs).filter(r=>r.date===date&&!r.deleted&&!/surf/i.test(""));
+  const acts=Object.values(S.runs).filter(r=>r.date===date&&!r.deleted);
   const lifted=lifts().some(l=>l.date===date);
-  const km=d?+d.km||0:0, kind=d?d.kind:"rest";
-  const extra=d&&/strength|gym/i.test(d.extra||"");
+  const km=d?+d.km||0:0, kind=d?d.kind:"rest", extra=d&&/strength|gym/i.test(d.extra||"");
   let t="rest";
   if(kind==="long"||km>=18)t="long";else if(d&&HARD.includes(kind))t="key";else if(km>0||extra||lifted||acts.length||(d&&kind!=="rest"))t="train";
-  return {t,d,km,kind,extra,acts};
+  return {t,d,km,kind};
 }
+function weightTrend(){
+  const ws=Object.values(S.log).filter(l=>+l.weight>0).sort((a,b)=>a.date.localeCompare(b.date));
+  const avg=(from,to)=>{const x=ws.filter(l=>l.date>=from&&l.date<=to).map(l=>+l.weight);return x.length>=3?x.reduce((a,b)=>a+b,0)/x.length:null;};
+  const now=avg(addD(TODAY,-6),TODAY), prev=avg(addD(TODAY,-13),addD(TODAY,-7));
+  const last=ws.length?+ws[ws.length-1].weight:null;
+  return {now,prev,last,rate:now&&prev?now-prev:null,n:ws.length,today:S.log[TODAY]&&S.log[TODAY].weight};
+}
+function cutAdj(){const t=weightTrend();if(t.rate==null)return 0;if(t.rate<-0.8)return 150;if(t.rate>-0.15)return -150;return 0;}
 function mealTargets(t){
-  const bw=bodyW(), p=Math.max(180,Math.min(200,Math.round(bw*2.1/5)*5));
-  if(t==="rest")return {kcal:2300,p,c:175,f:75,fl:"2.5 to 3 L"};
-  if(t==="long")return {kcal:2850,p,c:300,f:75,fl:"3 L+ plus electrolytes"};
-  return {kcal:2700,p,c:275,f:75,fl:"3 L+"};
+  const tr=weightTrend(), bw=tr.now||tr.last||91;
+  const p=Math.max(180,Math.min(210,Math.round(bw*2.2/5)*5));
+  const base={rest:2100,train:2350,key:2500,long:2700}[t]+cutAdj();
+  const f=t==="rest"?60:65, c=Math.max(100,Math.round((base-p*4-f*9)/4/5)*5);
+  return {kcal:base,p,c,f,fl:t==="long"?"3 L+ and electrolytes":t==="rest"?"2.5 to 3 L":"3 L+"};
 }
-function dateHash(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))>>>0;return h;}
+function pickKey(keys,seed,filt){const k=filt?keys.filter(filt):keys;return k[dateHash(seed)%k.length];}
 function mealDay(date){
-  const info=mealDayType(date), md=mealsDoc(date), tr=info.t!=="rest", dow=new Date(date+"T12:00").getDay();
+  const info=mealDayType(date), md=mealsDoc(date), t=info.t, tr=t!=="rest";
+  const dow=new Date(date+"T12:00").getDay(), wkday=dow>=1&&dow<=5;
+  const bk=md.b||(t==="key"||t==="long"?"oats":pickKey(MB_K,date+"b",k=>k!=="oats"||tr));
   const prev=addD(date,-1), pmd=mealsDoc(prev);
-  const dk=md.dinner||DINNER_KEYS[(dateHash(date)+3)%DINNER_KEYS.length];
-  const pdk=pmd.dinner||DINNER_KEYS[(dateHash(prev)+3)%DINNER_KEYS.length];
-  const useLeft=!md.lunch&&(dateHash(date)%2===0);
-  const lk=md.lunch||(useLeft?"left":LUNCH_KEYS[dateHash(date)%LUNCH_KEYS.length]);
+  const dk=md.d||pickKey(MD_K,date+"d",k=>!MD[k].f||dow===5||dow===6);
+  const pdk=pmd.d||pickKey(MD_K,prev+"d",k=>!MD[k].f||[5,6].includes(new Date(prev+"T12:00").getDay()));
+  const lk=md.l||(wkday?(dateHash(date+"l")%3===0?"left":pickKey(ML_K,date+"l",k=>k!=="left")):pickKey(ML_K,date+"l",k=>k!=="left"));
   const items=[];
-  const bk=md.breakfast||(info.t==="long"||info.t==="key"?"oats":tr?BREAK_KEYS[dateHash(date+"b")%BREAK_KEYS.length]:["eggs","yog"][dateHash(date+"b")%2]);
-  if(info.t==="long")items.push({slot:"Before the long run",...SNACK.pre,d:"Banana and coffee 30 to 60 min before. Electrolytes if it's warm."});
-  items.push({slot:info.t==="long"?"Breakfast, after the run":"Breakfast",swap:"breakfast",key:bk,...BREAKFASTS[bk]});
-  items.push({slot:"Coffee",n:"2 to 3 coffees",d:"Long blacks or lattes. Last one by 2 pm.",m:[0,0,0]});
-  let lunch;
-  if(lk==="left"){const pd=DINNERS[pdk];lunch={key:"left",n:pd.left,d:"Cook extra at yesterday's dinner. Add salad or a wrap.",m:[pd.m[0]-5,pd.m[1],pd.m[2]],i:[]};}
-  else lunch={key:lk,...LUNCHES[lk]};
-  items.push({slot:"Lunch",swap:"lunch",...lunch});
-  items.push({slot:"Afternoon",...(dateHash(date+"a")%2?SNACK.arvo:SNACK.arvoEggs)});
-  if(tr&&info.t!=="long")items.push({slot:"Before training",...SNACK.pre});
-  const din=DINNERS[dk]; let dm=din.m.slice(), dd=din.d;
-  if(!tr){dm=[dm[0],Math.round(dm[1]*.45),dm[2]];dd=dd.replace(/,? ?(roast or air-fried potatoes|rice or potatoes)/,"")+". Rest day: go light on the "+din.carbs+".";}
-  const treat=info.t==="long"&&(dow===6||dow===0)&&!md.dinner;
-  items.push(treat?{slot:"Dinner",swap:"dinner",key:"treat",n:"Treat meal",d:"Your pick after the long run. Still aim for 50 g+ protein (a burger, a parmi, a good steak).",m:[50,110,45],i:[]}:{slot:"Dinner",swap:"dinner",key:dk,n:din.n,d:dd,m:dm,i:din.i,cookExtra:!!(mealsDoc(addD(date,1)).lunch==="left"||(!mealsDoc(addD(date,1)).lunch&&dateHash(addD(date,1))%2===0))});
-  if(tr&&info.t!=="long")items.push({slot:"After training",n:"Shake and fruit",d:"Within an hour of training if dinner is more than an hour away.",m:[0,0,0],note:1});
-  const tg=mealTargets(info.t);
+  const withAlt=(x,on)=>{if(on&&x.alt)return {...x,d:x.d,altT:x.alt.t,m:[x.m[0]+x.alt.m[0],x.m[1]+x.alt.m[1],x.m[2]+x.alt.m[2]],i:(x.i||[]).concat(x.alt.i||[])};return x;};
+  if(t==="long")items.push({slot:"Before the long run",n:"Banana and coffee",d:"30 to 60 min before. Electrolytes if it's warm.",m:[1,27,0],i:[["Fruit","Bananas",1,""]]});
+  items.push({slot:t==="long"?"Breakfast, after the run":"Breakfast",swap:"b",key:bk,...withAlt(MB[bk],t==="key"||t==="long")});
+  items.push({slot:"Coffee",n:"2 to 3 coffees",d:"Long blacks, or skim or lite milk lattes. Last one by 2 pm.",m:[t==="rest"?8:8,12,4],note:1});
+  let L;
+  if(lk==="left"){const pd=MD[pdk];L={...ML.left,n:"Leftover "+pd.n.toLowerCase(),d:"From last night's double batch.",m:withAlt(pd,tr).m.slice(),i:[],key:"left"};}
+  else L={key:lk,...withAlt(ML[lk],tr)};
+  items.push({slot:"Lunch",swap:"l",...L});
+  const sk=md.s||pickKey(MS_K,date+"s");
+  items.push({slot:"Afternoon",swap:"s",key:sk,...MS[sk]});
+  if(tr&&t!=="long")items.push({slot:"Before training",n:"Banana or coffee",d:"Banana 30 to 60 min before a hard session. Easy runs: coffee is enough.",m:[1,t==="key"?27:0,0],i:t==="key"?[["Fruit","Bananas",1,""]]:[]});
+  const treat=t==="long"&&dow===6&&!md.d;
+  const nextLeft=(()=>{const nd=addD(date,1),nm=mealsDoc(nd),ndow=new Date(nd+"T12:00").getDay();return nm.l?nm.l==="left":(ndow>=1&&ndow<=5&&dateHash(nd+"l")%3===0);})();
+  if(treat)items.push({slot:"Dinner",swap:"d",key:"treat",n:"Treat meal, kept sensible",w:"Your pick",d:"After the long run. Aim for about 900 kcal: a burger without the chips, or two slices of pizza and a salad. Protein first.",m:[45,90,35],i:[]});
+  else{const D=withAlt(MD[dk],tr);items.push({slot:"Dinner",swap:"d",key:dk,...D,cookExtra:nextLeft&&!MD[dk].f,i:(D.i||[]).map(x=>nextLeft&&!MD[dk].f?[x[0],x[1],x[2]*2,x[3]]:x)});}
+  const tg=mealTargets(t);
   let tot=items.reduce((a,x)=>[a[0]+x.m[0],a[1]+x.m[1],a[2]+x.m[2]],[0,0,0]);
-  if(tot[0]<tg.p-10){items.push({slot:"Evening",...SNACK.top});tot=[tot[0]+30,tot[1]+10,tot[2]+3];}
-  if(tr&&tot[1]<tg.c-40){const gap=Math.min(110,Math.round((tg.c-tot[1])/10)*10);const di=items.findIndex(x=>x.swap==="dinner");
-    items.splice(di+1,0,{slot:"Carb top-up",n:"Extra carbs, about "+gap+" g",d:(gap>=70?"A big bowl of rice or potatoes with dinner, plus a piece of fruit or toast with honey.":"An extra cup of rice or potatoes with dinner, or a couple of pieces of fruit."),m:[4,gap,2],i:[["Other","Rice (uncooked)",Math.round(gap*0.8),"g"]]});tot=[tot[0]+4,tot[1]+gap,tot[2]+2];}
-  const kcal=Math.round(tot[0]*4+tot[1]*4+tot[2]*9);
-  return {date,info,items,tg,tot,kcal,lunchKey:lk,dinnerKey:dk,bkKey:bk};
+  if(tot[0]<tg.p-12){const add={slot:"Evening",n:"Protein top-up",d:"A scoop of whey in water, or a Chobani Fit tub",m:[25,4,1],i:[["Other","Whey protein",1,"scoop"]]};items.push(add);tot=[tot[0]+25,tot[1]+4,tot[2]+1];}
+  if((t==="key"||t==="long")&&tot[1]<tg.c-50){const g=Math.min(80,Math.round((tg.c-tot[1])/10)*10);items.push({slot:"Around the session",n:"Extra carbs, about "+g+" g",d:"Rice cakes with honey, a second banana, or a bigger serve of rice with dinner. Carbs go where the work is.",m:[2,g,1],i:[["Other","Rice cakes",4,""]]});tot=[tot[0]+2,tot[1]+g,tot[2]+1];}
+  let kc=Math.round(tot[0]*4+tot[1]*4+tot[2]*9), gap=tg.kcal-kc;
+  if(gap>120){
+    const opts=tr?[["a banana with breakfast",[1,27,0],["Fruit","Bananas",1,""]],["double the rice or potatoes at dinner",[3,40,1],["Other","Microwave rice pouch (250 g)",0.5,""]],["a tablespoon of olive oil on your salad",[0,0,14],["Other","Olive oil",1,"tbsp"]],["a quarter of an avocado",[1,2,8],["Fruit","Avocado",0.25,""]],["2 rice cakes with honey in the afternoon",[2,30,0],["Other","Rice cakes",2,""]],["a slice of toast with honey",[3,30,1],["Other","Helga's Lower Carb bread",1,"slices"]],["a piece of fruit",[1,20,0],["Fruit","Apples or mandarins",1,""]],["another 20 g of oats or a crumpet",[3,15,1],["Other","Quick oats",20,"g"]]]
+      :[["a piece of fruit",[1,20,0],["Fruit","Apples or mandarins",1,""]],["20 g nuts",[4,4,10],["Other","Mixed nuts",20,"g"]],["a slice of wholemeal toast",[4,14,1],["Other","Helga's Lower Carb bread",1,"slices"]],["another piece of fruit",[1,20,0],["Fruit","Apples or mandarins",1,""]]];
+    const pick=[];let add=[0,0,0];
+    for(const o of opts){if(gap-(add[0]*4+add[1]*4+add[2]*9)<=60)break;pick.push(o);add=[add[0]+o[1][0],add[1]+o[1][1],add[2]+o[1][2]];}
+    if(pick.length){const txt=pick.map(o=>o[0]);const sent=txt.length>1?txt.slice(0,-1).join(", ")+" and "+txt[txt.length-1]:txt[0];
+      items.push({slot:tr?"Fuel for training":"Fill the gap",n:"Add to today",fill:1,d:sent.charAt(0).toUpperCase()+sent.slice(1)+"."+(tr?" Carbs go around the session. Under-fuelling training days is how a cut stalls.":" Don't skip it: too deep a cut hurts your running."),m:add,i:pick.map(o=>o[2])});
+      tot=[tot[0]+add[0],tot[1]+add[1],tot[2]+add[2]];kc=Math.round(tot[0]*4+tot[1]*4+tot[2]*9);}}
+  const kcal=kc;
+  return {date,info,items,tg,tot,kcal,keys:{b:bk,l:lk,d:dk,s:sk}};
 }
 function mealWeek(mon){return [0,1,2,3,4,5,6].map(i=>mealDay(addD(mon,i)));}
 function shopList(days){
   const acc={};
-  const add=(g,n,q,u)=>{const k=g+"|"+n+"|"+u;acc[k]=acc[k]||{g,n,u,q:0};acc[k].q+=q;};
-  days.forEach(dy=>dy.items.forEach(x=>{(x.i||[]).forEach(([g,n,q,u])=>add(g,n,q*(x.cookExtra?2:1),u));}));
+  days.forEach(dy=>dy.items.forEach(x=>(x.i||[]).forEach(([g,n,q,u])=>{const k=g+"|"+n+"|"+u;acc[k]=acc[k]||{g,n,u,q:0};acc[k].q+=q;})));
   const groups={Protein:[],Dairy:[],Fruit:[],Other:[]};
-  Object.values(acc).forEach(o=>{let q=o.q,u=o.u,label;
-    if(/^bag\/(\d)$/.test(u)){label=Math.ceil(q/ +u.split("/")[1])+" bag"+(Math.ceil(q/ +u.split("/")[1])>1?"s":"");}
-    else if(/^jar\/(\d)$/.test(u)){label=Math.ceil(q/ +u.split("/")[1])+" jar";}
-    else if(u==="g"){label=q>=1000?(Math.round(q/100)/10)+" kg":Math.round(q/50)*50+" g";}
-    else if(u==="slices"){label=Math.ceil(q/20)+" loaf";}
-    else if(u==="ml"){label=Math.ceil(q/1000)+" L";}
-    else if(u==="scoop"){label=q+" scoops";}
-    else if(u==="serve"){label=q+" serves";}
-    else label=String(Math.ceil(q));
+  Object.values(acc).forEach(o=>{const q=o.q,u=o.u;let label;
+    const per=/^(bag|tub)\/(\d)$/.exec(u);
+    if(per){const n=Math.ceil(q/ +per[2]);label=n+" "+per[1]+(n>1?"s":"");}
+    else if(u==="g")label=q>=1000?(Math.round(q/100)/10)+" kg":Math.round(q/50)*50+" g";
+    else if(u==="ml")label=q>=1000?(Math.round(q/100)/10)+" L":q+" ml";
+    else if(u==="slices")label=Math.ceil(q/14)+" loaf";
+    else if(u==="scoop")label=q+" scoops";
+    else if(u==="jar"||u==="bag"||u==="serve")label=Math.ceil(q)+" "+u+(Math.ceil(q)>1?"s":"");
+    else label=String(Math.ceil(q*2)/2).replace(".5"," and a half");
     if(o.n==="Eggs")label=Math.ceil(q/12)+" dozen ("+Math.round(q)+")";
+    if(o.n==="Hot roast chicken")label=Math.ceil(q)+" (buy on the day)";
     (groups[o.g]||groups.Other).push({n:o.n,label});});
-  groups.Other.push({n:"Coffee and milk",label:"for 2 to 3 a day"},{n:"Electrolytes",label:"for long runs and hot days"});
+  groups.Other.push({n:"Coffee, skim or lite milk",label:"for the week"},{n:"Electrolytes",label:"long runs and hot days"});
   return groups;
 }
+function swapOptions(slot,t){
+  const src=slot==="b"?MB:slot==="l"?ML:slot==="d"?MD:MS;
+  return Object.entries(src).map(([k,x])=>({k,x}));
+}
 function vMeals(){
-  const off=UI.mealWk||0, mon=addD(monOf(TODAY),7*off), days=mealWeek(mon);
+  const off=UI.mealWk||0, mon=addD(monOf(TODAY),7*off), days=mealWeek(mon), tw=weightTrend(), goal=+S.settings.weightGoal||87;
   const nTr=days.filter(d=>d.info.t!=="rest").length;
-  let h=head("Fuel","Meals","Three meals and a snack. Bigger carbs on training days, protein high every day. Tap Swap on any meal to change it.");
+  let h=head("Fuel","Meals","Built for a cut: high protein, calories down, carbs where the training is. Melbourne staples from Woolies and Coles, with quick takeaway options that still fit.");
+  // cut card
+  const adj=cutAdj();
+  h+='<section class="card pad" style="margin-bottom:14px"><div class="ch"><div class="eb acc">The cut</div><span class="sub mono">goal '+goal+' kg</span></div>'+
+    '<div class="mcut"><div><div class="mbig mono">'+(tw.now?tw.now.toFixed(1):tw.last?(+tw.last).toFixed(1):"·")+'</div><div class="sub">'+(tw.now?"7 day average, kg":tw.last?"last weigh-in, kg":"no weigh-ins yet")+'</div></div>'+
+    '<div><div class="mbig mono">'+(tw.rate!=null?(tw.rate>0?"+":"")+tw.rate.toFixed(2):"·")+'</div><div class="sub">kg per week</div></div>'+
+    '<div><div class="mbig mono">'+((tw.now||tw.last)?Math.max(0,((tw.now||tw.last)-goal)).toFixed(1):"·")+'</div><div class="sub">kg to go</div></div></div>'+
+    '<div class="sub" style="margin-top:10px">Aim for 0.3 to 0.6 kg a week. Faster than that and your training suffers. '+(adj>0?'<b>You are dropping too fast, so targets are up 150 kcal.</b>':adj<0?'<b>The scale has stalled for two weeks, so targets are down 150 kcal.</b>':tw.rate!=null?'On track, targets unchanged.':'Weigh in each morning after the toilet, before food, and the targets will adjust themselves.')+'</div>'+
+    '<form class="mweigh" id="mwF"><input id="mwIn" type="number" inputmode="decimal" step="0.1" placeholder="'+(tw.today?"Today: "+tw.today+" kg":"Today's weight, kg")+'"><button class="btn" type="submit">'+(tw.today?"Update":"Log")+'</button></form></section>';
   h+='<div class="seg" style="margin-bottom:14px"><button type="button" data-mwk="0" aria-pressed="'+(off===0)+'">This week</button><button type="button" data-mwk="1" aria-pressed="'+(off===1)+'">Next week</button></div>';
-  h+='<section class="card pad" style="margin-bottom:14px"><div class="ch"><div class="eb acc">'+fD(mon,true)+' to '+fD(addD(mon,6),true)+'</div><span class="sub mono">'+nTr+' training · '+(7-nTr)+' rest</span></div>'+
-    '<table class="tbl mtbl" style="margin-top:8px"><thead><tr><th>Day</th><th>Training</th><th>Breakfast</th><th>Lunch</th><th>Dinner</th></tr></thead><tbody>'+
-    days.map(dy=>{const B=dy.items.find(x=>x.swap==="breakfast"),L=dy.items.find(x=>x.swap==="lunch"),D=dy.items.find(x=>x.swap==="dinner");return '<tr'+(dy.date===TODAY?' class="is-today"':'')+'><td class="mono">'+["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(dy.date+"T12:00").getDay()]+'</td><td>'+esc(dy.info.d&&dy.info.km?dy.info.d.title+' '+dy.info.km+' km':dy.info.t==="rest"?"Rest":(dy.info.d?dy.info.d.title:"Training"))+'</td><td>'+esc(B.n)+'</td><td>'+esc(L.n)+'</td><td>'+esc(D.n)+'</td></tr>';}).join("")+'</tbody></table></section>';
-  days.forEach(dy=>{const open=dy.date===TODAY||(off===1&&dy===days[0]);const tg=dy.tg, t=dy.info.t;
-    const tl={rest:"Rest day",train:"Training day",key:"Key session day",long:"Long run day"}[t];
-    h+='<details class="card pad mday"'+(open?' open':'')+'><summary><div class="ch"><div><div class="eb'+(dy.date===TODAY?' acc':'')+'">'+fD(dy.date,true)+(dy.date===TODAY?' · Today':'')+'</div><h2 style="margin-top:4px">'+tl+'</h2></div><span class="sub mono">'+Math.round(dy.tot[0])+' / '+tg.p+' g P</span></div></summary>'+
-      '<div class="mtg"><span><b>~'+tg.kcal.toLocaleString()+'</b> kcal</span><span><b>'+tg.p+'</b> g protein</span><span><b>'+tg.c+'</b> g carbs</span><span><b>'+tg.f+'</b> g fat</span><span><b>'+tg.fl+'</b> fluids</span></div>'+
-      '<div class="mlist">'+dy.items.map(x=>'<div class="mrow"><div class="mslot eb">'+esc(x.slot)+'</div><div class="mbody"><b>'+esc(x.n)+'</b>'+(x.opt?' <span class="sub">(optional)</span>':'')+(x.cookExtra?' <span class="mtag">cook extra for lunch</span>':'')+'<div class="sub">'+esc(x.d||"")+'</div></div><div class="mright">'+(x.m[0]>=5?'<span class="mono sub">'+x.m[0]+' g P</span>':'')+(x.swap&&x.key!=="treat"?'<button type="button" class="lg-sw" data-mswap="'+x.swap+'" data-mdate="'+dy.date+'">Swap</button>':'')+(x.key==="treat"?'<button type="button" class="lg-sw" data-mswap="dinner" data-mdate="'+dy.date+'">Swap</button>':'')+'</div></div>').join("")+'</div>'+
-      '<div class="sub" style="margin-top:10px">Planned: about '+dy.kcal.toLocaleString()+' kcal, '+dy.tot[0]+' g protein, '+dy.tot[1]+' g carbs, '+dy.tot[2]+' g fat.'+(dy.tot[0]<tg.p-10?' Add a shake to hit protein.':'')+'</div></details>';});
+  // week strip
+  const tl={rest:"Rest",train:"Training",key:"Key session",long:"Long run"};
+  h+='<div class="mweek">'+days.map(dy=>{const dd=new Date(dy.date+"T12:00");return '<button type="button" class="mwd'+(dy.date===TODAY?' is-today':'')+(UI.mealDay===dy.date?' sel':'')+'" data-mday="'+dy.date+'"><span class="eb">'+DOW[dd.getDay()]+'</span><b>'+dd.getDate()+'</b><span class="mono sub">'+(dy.tg.kcal/1000).toFixed(1)+'k</span><i class="mdot t-'+dy.info.t+'"></i></button>';}).join("")+'</div>';
+  const sel=days.find(d=>d.date===UI.mealDay)||days.find(d=>d.date===TODAY)||days[0];
+  const tg=sel.tg;
+  h+='<section class="card pad mdaycard"><div class="ch"><div><div class="eb acc">'+fD(sel.date,true)+(sel.date===TODAY?' · Today':'')+'</div><h2 style="margin-top:4px">'+tl[sel.info.t]+(sel.info.d&&sel.info.km?' <span class="sub">· '+esc(sel.info.d.title)+' '+sel.info.km+' km</span>':'')+'</h2></div></div>'+
+    '<div class="mtg"><div><b class="mono">'+tg.kcal.toLocaleString()+'</b><span>kcal</span></div><div><b class="mono">'+tg.p+'</b><span>protein g</span></div><div><b class="mono">'+tg.c+'</b><span>carbs g</span></div><div><b class="mono">'+tg.f+'</b><span>fat g</span></div></div>'+
+    '<div class="mlist">'+sel.items.map(x=>'<div class="mrow"><div class="mslot eb">'+esc(x.slot)+'</div><div class="mbody"><b>'+esc(x.n)+'</b>'+(x.f?' <span class="mtag">takeaway</span>':'')+(x.cookExtra?' <span class="mtag">cook double</span>':'')+(x.w&&!x.f&&x.w!=="Home"?'<div class="mwhere mono">'+esc(x.w)+'</div>':x.f?'<div class="mwhere mono">'+esc(x.w)+'</div>':'')+'<div class="sub">'+esc(x.d||"")+(x.altT?' <span class="malt">'+esc(x.altT)+'</span>':'')+'</div></div><div class="mright">'+(x.m[0]>=5?'<span class="mono">'+x.m[0]+'g P</span><span class="mono sub">'+Math.round(x.m[0]*4+x.m[1]*4+x.m[2]*9)+'</span>':'')+(x.swap?'<button type="button" class="lg-sw" data-mswap="'+x.swap+'" data-mdate="'+sel.date+'">Swap</button>':'')+'</div></div>'+(UI.mealSwap===sel.date+x.swap?'<div class="mpick">'+swapOptions(x.swap,sel.info.t).map(o=>'<button type="button" data-mpick="'+o.k+'" data-mslot="'+x.swap+'" data-mdate="'+sel.date+'" class="'+(o.k===x.key?'on':'')+'"><b>'+esc(o.x.n)+'</b>'+(o.x.f?' <span class="mtag">takeaway</span>':'')+'<span class="sub">'+esc(o.x.w||"")+(o.x.m[0]?' · '+o.x.m[0]+'g P · '+Math.round(o.x.m[0]*4+o.x.m[1]*4+o.x.m[2]*9)+' kcal':'')+'</span></button>').join("")+'</div>':'')).join("")+'</div>'+
+    '<div class="mtot"><span>Planned</span><b class="mono">'+sel.kcal.toLocaleString()+' kcal</b><b class="mono">'+sel.tot[0]+'g P</b><b class="mono">'+sel.tot[1]+'g C</b><b class="mono">'+sel.tot[2]+'g F</b></div>'+
+    '<div class="sub" style="margin-top:8px">Numbers are estimates. Check the label on packaged food, and weigh meat raw for a couple of weeks until you can eyeball it.</div></section>';
+  // week table (compact)
+  h+='<section class="card pad" style="margin-top:14px"><div class="ch"><div class="eb acc">The week</div><span class="sub mono">'+nTr+' training · '+(7-nTr)+' rest</span></div><div class="mwtab">'+
+    days.map(dy=>{const g=k=>dy.items.find(x=>x.swap===k);return '<button type="button" class="mwr'+(dy.date===TODAY?' is-today':'')+'" data-mday="'+dy.date+'"><span class="mono eb">'+DOW[new Date(dy.date+"T12:00").getDay()]+'</span><span><b>'+esc(g("l").n)+'</b><span class="sub">'+esc(g("d").n)+'</span></span><span class="mono sub">'+dy.tg.kcal.toLocaleString()+'</span></button>';}).join("")+'</div></section>';
+  // shopping
   const sl=shopList(days), ticks=(()=>{try{return JSON.parse(localStorage.getItem("mt-shop-"+mon)||"{}");}catch(e){return {};}})();
-  h+='<section class="card pad" style="margin-top:14px"><div class="ch"><div class="eb acc">Shopping list</div><span class="sub mono">'+fD(mon,true)+' week</span></div><div class="shop">'+
-    Object.entries(sl).filter(([,v])=>v.length).map(([g,v])=>'<div><div class="eb" style="margin:12px 0 6px">'+g+'</div>'+v.map(o=>{const k=g+o.n;return '<label class="shopi"><input type="checkbox" data-shop="'+esc(k)+'" data-shopwk="'+mon+'"'+(ticks[k]?' checked':'')+'><span>'+esc(o.n)+'</span><span class="mono sub">'+esc(o.label)+'</span></label>';}).join("")+'</div>').join("")+
-    '</div><div class="sub" style="margin-top:10px">Plus takeaway sushi on sushi days. Weekends: one treat meal after the long run, protein still 180 g+.</div></section>';
+  h+='<section class="card pad" style="margin-top:14px"><div class="ch"><div class="eb acc">Woolies / Coles list</div><span class="sub mono">'+fD(mon,true)+' week</span></div>'+
+    Object.entries(sl).filter(([,v])=>v.length).map(([g,v])=>'<div class="eb" style="margin:14px 0 4px">'+g+'</div>'+v.map(o=>{const k=g+o.n;return '<label class="shopi"><input type="checkbox" data-shop="'+esc(k)+'" data-shopwk="'+mon+'"'+(ticks[k]?' checked':'')+'><span>'+esc(o.n)+'</span><span class="mono sub">'+esc(o.label)+'</span></label>';}).join("")).join("")+
+    '<div class="sub" style="margin-top:12px">Takeaway days are not on the list. Sunday prep: cook 1 kg chicken breast, boil 6 eggs, portion the mince.</div></section>';
+  h+='<section class="card pad" style="margin-top:14px"><div class="eb acc">Cut rules</div><div class="prose" style="margin-top:6px"><p>Protein at every meal, about 200 g a day. It keeps the muscle while the weight comes off.</p><p>Carbs follow the training: most on key session and long run days, least on rest days. Never cut carbs before a quality session or long run.</p><p>Drinks are the easy win. Skim or lite milk in coffee, no juice, alcohol counts.</p><p>Takeaway is fine when you order it the way it says here. Skip the chips, sauces on the side.</p></div></section>';
   return h;
 }
 function bindMeals(r){
-  r.querySelectorAll("[data-mwk]").forEach(b=>b.onclick=()=>{UI.mealWk=+b.dataset.mwk;render();});
-  r.querySelectorAll("[data-mswap]").forEach(b=>b.onclick=async()=>{const date=b.dataset.mdate, slot=b.dataset.mswap, dy=mealDay(date);
-    const keys=slot==="lunch"?LUNCH_KEYS.concat(["left"]):slot==="breakfast"?BREAK_KEYS:DINNER_KEYS; const cur=slot==="lunch"?dy.lunchKey:slot==="breakfast"?dy.bkKey:(dy.items.find(x=>x.swap==="dinner").key);
-    const nx=keys[(keys.indexOf(cur)+1)%keys.length];
-    S.meals[date]={...mealsDoc(date),[slot]:nx};render();
+  r.querySelectorAll("[data-mwk]").forEach(b=>b.onclick=()=>{UI.mealWk=+b.dataset.mwk;UI.mealDay=null;UI.mealSwap=null;render();});
+  r.querySelectorAll("[data-mday]").forEach(b=>b.onclick=()=>{UI.mealDay=b.dataset.mday;UI.mealSwap=null;render();if(b.classList.contains("mwr")){const c=$(".mdaycard");c&&c.scrollIntoView({behavior:"smooth",block:"start"});}});
+  r.querySelectorAll("[data-mswap]").forEach(b=>b.onclick=()=>{const k=b.dataset.mdate+b.dataset.mswap;UI.mealDay=b.dataset.mdate;UI.mealSwap=UI.mealSwap===k?null:k;render();});
+  r.querySelectorAll("[data-mpick]").forEach(b=>b.onclick=async()=>{const date=b.dataset.mdate, slot=b.dataset.mslot;
+    S.meals[date]={...mealsDoc(date),[slot]:b.dataset.mpick};UI.mealSwap=null;render();
     try{await S.db.doc("meals/"+date).set(S.meals[date]);}catch(e){toast("Couldn't save the swap");}});
   r.querySelectorAll("[data-shop]").forEach(c=>c.onchange=()=>{const k="mt-shop-"+c.dataset.shopwk;let t={};try{t=JSON.parse(localStorage.getItem(k)||"{}");}catch(e){}t[c.dataset.shop]=c.checked;try{localStorage.setItem(k,JSON.stringify(t));}catch(e){}});
+  const wf=$("#mwF",r);if(wf)wf.onsubmit=async e=>{e.preventDefault();const v=+$("#mwIn",r).value;if(!(v>40&&v<200)){toast("Enter your weight in kg");return;}
+    const doc={...(S.log[TODAY]||{}),date:TODAY,weight:Math.round(v*10)/10};S.log[TODAY]=doc;render();
+    try{await S.db.doc("log/"+TODAY).set(doc);toast("Logged "+doc.weight+" kg");}catch(err){toast("Couldn't save");}};
 }
 
 function gymCoachCard(){
