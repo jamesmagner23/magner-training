@@ -422,6 +422,7 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .fd-meal{margin-bottom:10px}.fd-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}.fd-row:first-of-type{border-top:0}
 .fd-row.plan .fd-main b,.fd-row.plan .fd-n{opacity:.62}.fd-main{text-align:left;display:flex;flex-direction:column;gap:1px;min-width:0}.fd-main b{font-weight:500}.fd-main .sub{font-size:12.5px}
 .fd-n{text-align:right;font-size:14px;display:flex;flex-direction:column}.fd-n small{font-size:11.5px;color:var(--ink3)}
+.fc-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px}.fc-d{display:flex;flex-direction:column;align-items:center;gap:4px}.fc-d i{width:100%;height:8px;border-radius:4px}
 .fd-btns{display:flex;gap:6px;align-items:center}.fd-x{width:28px;height:28px;border-radius:6px;background:#fff;box-shadow:var(--raise);font-size:17px;line-height:1;color:var(--ink3);display:grid;place-items:center}.fd-x:active{color:var(--bad)}
 .fd-acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .fs-list{display:grid;max-height:56vh;overflow:auto}.fs-it{display:grid;grid-template-columns:1fr auto;gap:10px;text-align:left;padding:10px 2px;border-top:1px solid var(--line)}.fs-it>span:first-child{display:flex;flex-direction:column;min-width:0}.fs-it b{font-weight:500}.fs-it .sub{font-size:12.5px}.fs-it .mono{text-align:right;display:flex;flex-direction:column}.fs-it small{font-size:11.5px;color:var(--ink3)}
@@ -1091,7 +1092,35 @@ function ensurePlan(date){
   if(date>=addD(TODAY,-1)&&S.db){planQueue.add(date);clearTimeout(planTimer);planTimer=setTimeout(()=>{planQueue.forEach(d=>S.db.doc("meals/"+d).set(S.meals[d]).catch(()=>{}));planQueue.clear();},800);}
   return plan;
 }
-function saveDay(date){S.db&&S.db.doc("meals/"+date).set(S.meals[date]).catch(()=>toast("Couldn't save"));}
+function daySum(date){const md=mealsDoc(date),log=md.log||{};const e=sumItems([].concat(...SLOTS.map(([k])=>log[k]||[])));const info=mealDayType(date),tg=mealTargets(info.t,info);return {kcal:Math.round(e[0]),p:Math.round(e[1]),c:Math.round(e[2]),f:Math.round(e[3]),tkcal:tg.kcal,tp:tg.p,tc:tg.c,tf:tg.f,type:info.t,items:SLOTS.reduce((a,[k])=>a+(log[k]||[]).length,0)};}
+function saveDay(date){if(!S.meals[date])return;S.meals[date]={...S.meals[date],sum:daySum(date)};S.db&&S.db.doc("meals/"+date).set(S.meals[date]).catch(()=>toast("Couldn't save"));}
+function foodVerdict(sm){if(!sm||!sm.items)return {k:"none",t:"Not logged"};const r=sm.kcal/sm.tkcal, pr=sm.p/sm.tp;
+  if(r>1.05)return {k:"over",t:"Over by "+Math.round(sm.kcal-sm.tkcal)+" kcal"};
+  if(r<0.85&&sm.type!=="rest")return {k:"under",t:"Under-fuelled by "+Math.round(sm.tkcal-sm.kcal)+" kcal"};
+  if(pr<0.9)return {k:"lowp",t:"Protein short by "+Math.round(sm.tp-sm.p)+" g"};
+  return {k:"on",t:"On target"};}
+function foodWeek(n){const out=[];for(let i=n;i>=1;i--){const d=addD(TODAY,-i);const md=mealsDoc(d);const sm=(md.log&&Object.values(md.log).some(a=>a&&a.length))?daySum(d):null;out.push({d,sm,v:foodVerdict(sm)});}return out;}
+function foodCoachCard(){
+  [TODAY,addD(TODAY,-1)].forEach(d=>{const md=mealsDoc(d);if(md.log){const sm=daySum(d);if(JSON.stringify(sm)!==JSON.stringify(md.sum))setTimeout(()=>saveDay(d),300);}});
+  const today=daySum(TODAY), tv=foodVerdict(today), wk=foodWeek(7), logged=wk.filter(x=>x.sm), on=wk.filter(x=>x.v.k==="on").length;
+  let streak=0;for(let i=wk.length-1;i>=0;i--){if(wk[i].v.k==="on")streak++;else break;}
+  const avgK=logged.length?Math.round(logged.reduce((a,x)=>a+x.sm.kcal,0)/logged.length):0, avgP=logged.length?Math.round(logged.reduce((a,x)=>a+x.sm.p,0)/logged.length):0;
+  const tw=weightTrend();
+  const col={on:"var(--good)",over:"var(--bad)",under:"var(--warn)",lowp:"var(--warn)",none:"var(--ink3)"};
+  let h='<section class="card pad"><div class="ch"><div class="eb acc">Food</div><span class="sub mono">'+on+' of 7 days on target</span></div>';
+  h+='<h2>Today: '+fK(today.kcal)+' of '+fK(today.tkcal)+' kcal</h2><div class="sub" style="margin-top:4px">'+today.p+' of '+today.tp+' g protein · '+(today.items?(today.tkcal-today.kcal>=0?fK(today.tkcal-today.kcal)+' kcal and '+Math.max(0,today.tp-today.p)+' g protein left':'over by '+fK(today.kcal-today.tkcal)+' kcal'):'nothing logged yet')+'</div>';
+  h+='<div class="fc-days">'+wk.map(x=>{const dd=new Date(x.d+"T12:00");return '<div class="fc-d" title="'+esc(x.v.t)+'"><i style="background:'+col[x.v.k]+'"></i><span class="eb">'+DOW[dd.getDay()].slice(0,1)+'</span></div>';}).join("")+'</div>';
+  const lines=[];
+  if(logged.length)lines.push('Last 7 days: '+logged.length+' logged, averaging '+fK(avgK)+' kcal and '+avgP+' g protein.');else lines.push('Log your food each day and your coach will hold you to it here.');
+  if(streak>=2)lines.push(streak+' days on target in a row. Keep it going.');
+  const unders=wk.filter(x=>x.v.k==="under").length, overs=wk.filter(x=>x.v.k==="over").length, lowp=wk.filter(x=>x.v.k==="lowp").length;
+  if(overs>=2)lines.push(overs+' days over target this week. The usual culprits are milk coffees, takeaway sides and the evening. Tighten one of those.');
+  if(unders>=2)lines.push(unders+' training days under-fuelled. That stalls the cut and your running. Eat the carbs around sessions.');
+  if(lowp>=2)lines.push('Protein short on '+lowp+' days. Add a shake or a YoPro to close the gap.');
+  if(tw.rate!=null)lines.push('Weight '+(tw.rate<0?'down ':'up ')+Math.abs(tw.rate).toFixed(2)+' kg on last week.');
+  h+='<div class="sub" style="margin-top:12px">'+lines.map(esc).join(" ")+'</div>';
+  h+='<div class="row" style="margin-top:12px;display:flex;gap:8px"><button class="btn ghost" type="button" data-gomeals="1">Open meals</button></div></section>';
+  return h;}
 function mealDay(date){
   const info=mealDayType(date), tg=mealTargets(info.t,info), md=mealsDoc(date), plan=ensurePlan(date), log=md.log||{};
   const eaten=sumItems([].concat(...SLOTS.map(([k])=>log[k]||[])));
@@ -1249,6 +1278,7 @@ function vCoach(){
   const live=S.notes.filter(n=>!n.resolved), daily=live.filter(n=>/-daily$/.test(n.id)), flags=live.filter(n=>!/-daily$/.test(n.id));
   const card=(n,eb)=>'<section class="card pad"><div class="eb acc">'+esc(eb||"")+(n.date?(eb?' · ':'')+fD(n.date,true):"")+'</div><h2>'+esc(n.title||"")+'</h2><div class="prose">'+esc(n.body||"").split("\n").filter(Boolean).map(p=>'<p>'+p+'</p>').join("")+'</div></section>';
   if(daily[0])h+=card(daily[0],"Daily breakdown"); else h+='<section class="card pad"><div class="eb acc">Daily breakdown</div><div class="empty">Each morning after the sync, a breakdown of yesterday and today lands here.</div></section>';
+  h+=foodCoachCard();
   h+=gymCoachCard();
   const recentFlags=flags.filter(n=>!daily[0]||String(n.date||"")>=addD(TODAY,-3));
   recentFlags.slice(0,2).forEach(n=>{h+=card(n,"Flag");});
@@ -1535,7 +1565,7 @@ function coachContext(){
   const logs=Object.values(S.log).filter(l=>l.date>=since).sort((a,b)=>a.date.localeCompare(b.date)).map(l=>l.date+": "+[l.done?"done":"",l.rpe?"RPE "+l.rpe:"",l.foot!=null?"foot "+l.foot+"/10":"",(l.niggles||[]).map(n=>n.area+" "+n.side+" "+n.score+"/10").join(", "),l.shoe||"",l.heatMin?l.heatType+" "+l.heatMin+"min":"",l.note||""].filter(Boolean).join(" | ")).join("\n")||"none";
   const plan=w?(w.days||[]).map(d=>d.date+" "+d.dow+": "+d.title+(d.km?" "+d.km+"km":"")).join("\n"):"no plan week";
   const nxt=weekList().find(x=>w&&x.n===w.n+1);
-  return gymCtx()+"\n"+"ATHLETE: James, Melbourne, 180cm ~89kg. Marathon PBs 3:13 (Melbourne 11 Oct 2026, foot pain from 2km, cramps from 25km), 3:14:50 Sydney. 5km 17:48. Goal Ballarat Marathon 18 Apr 2027, target "+S.settings.goalMarathon+". Limiter: aerobic endurance at pace (HR decoupling 7 to 10% in marathons). Real past volume 60 to 70km/week.\n"+
+  return gymCtx()+"\n"+(()=>{try{const t=daySum(TODAY),w=foodWeek(7).filter(x=>x.sm);return "FOOD today: "+t.kcal+"/"+t.tkcal+" kcal, "+t.p+"/"+t.tp+" g protein. Last 7 days logged "+w.length+": "+w.map(x=>x.d.slice(5)+" "+x.sm.kcal+"kcal "+x.sm.p+"gP ("+x.v.t+")").join("; ")+"\n";}catch(e){return "";}})()+"ATHLETE: James, Melbourne, 180cm ~89kg. Marathon PBs 3:13 (Melbourne 11 Oct 2026, foot pain from 2km, cramps from 25km), 3:14:50 Sydney. 5km 17:48. Goal Ballarat Marathon 18 Apr 2027, target "+S.settings.goalMarathon+". Limiter: aerobic endurance at pace (HR decoupling 7 to 10% in marathons). Real past volume 60 to 70km/week.\n"+
    "FOOT: left forefoot injured end of a 24km on 2 Oct in Saucony Endorphin Elite 3 (Bali heat). MRI clear, but swelling and bruising top and sole, centred on the big toe joint. Advised to see a doctor this week: midfoot ligament, sesamoid and gout to rule out. No running until cleared. Elite 3 parked, Elite 2 preferred.\n"+
    "WEIGHT: target "+(S.settings.weightGoal||87)+"kg by race. Recent: "+(Object.values(S.log).filter(l=>l.weight).sort((a,b)=>a.date.localeCompare(b.date)).slice(-7).map(l=>l.date.slice(5)+" "+l.weight).join(", ")||"none logged")+". Aim 0.25 to 0.5kg/week loss, never under-fuel key sessions or long runs.\n"+"SETTINGS: VDOT "+S.settings.vdot+", LTHR "+(S.settings.lthr||"?")+", max HR "+(S.settings.maxHr||"?")+". Zones: "+z.map(x=>x.n+" "+x.txt+(x.hr?" ("+x.hr+")":"")).join("; ")+".\n"+
    "THIS WEEK ("+(w?"W"+w.n+" "+w.phase:"")+"):\n"+plan+(nxt?"\nNEXT WEEK W"+nxt.n+": "+nxt.focus:"")+(()=>{const a=pmc(30);const n=a[a.length-1];return n?"\nLOAD: fitness CTL "+Math.round(n.ctl)+", fatigue ATL "+Math.round(n.atl)+", form TSB "+Math.round(n.tsb):"";})()+"\nLAST 14 DAYS RUNS:\n"+runs+"\nLAST 14 DAYS LOGS:\n"+logs+"\nLATEST COACH NOTE: "+((S.notes[0]||{}).title||"")+". TODAY: "+TODAY+".";
@@ -2177,6 +2207,7 @@ function render(){
 function setTab(t){UI.tab=t;UI.sel=null;try{localStorage.setItem("mt-tab",t);}catch(e){}closeSheet();render();scrollTo(0,0);}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b&&b.tagName==="BUTTON"){setTab(b.dataset.tab);}});
 function bind(r){
+  r.querySelectorAll("[data-gomeals]").forEach(b=>b.onclick=()=>{UI.tab="meals";render();scrollTo(0,0);});
   bindMeals(r);
   r.querySelectorAll("[data-gymopen]").forEach(b=>b.onclick=()=>openLift(b.dataset.gymopen));
   r.querySelectorAll("[data-gymtab]").forEach(b=>b.onclick=()=>{UI.tab="gym";render();scrollTo(0,0);});
