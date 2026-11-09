@@ -425,7 +425,7 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .fd-btns{display:flex;gap:6px;align-items:center}.fd-x{width:28px;height:28px;border-radius:6px;background:#fff;box-shadow:var(--raise);font-size:17px;line-height:1;color:var(--ink3);display:grid;place-items:center}.fd-x:active{color:var(--bad)}
 .fd-acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .fs-list{display:grid;max-height:56vh;overflow:auto}.fs-it{display:grid;grid-template-columns:1fr auto;gap:10px;text-align:left;padding:10px 2px;border-top:1px solid var(--line)}.fs-it>span:first-child{display:flex;flex-direction:column;min-width:0}.fs-it b{font-weight:500}.fs-it .sub{font-size:12.5px}.fs-it .mono{text-align:right;display:flex;flex-direction:column}.fs-it small{font-size:11.5px;color:var(--ink3)}
-.fs-it .mtag,.fd-main .mtag{align-self:flex-start;margin:2px 0 0}.fs-p{padding:6px 0}.fs-p b{font-weight:500;font-size:17px}.fs-q{display:flex;gap:6px;margin:14px 0 8px}.fs-q button{flex:1;padding:8px 0;border-radius:8px;box-shadow:var(--raise);background:#fff;font-size:13px}.fs-q button[aria-pressed=true]{background:rgba(0,0,0,.95);color:#fff}
+.fs-it .mtag,.fd-main .mtag{align-self:flex-start;margin:2px 0 0}.fs-better{margin-top:10px;padding:9px 11px;border-radius:8px;background:rgba(5,136,240,.07);color:var(--ink2);font-size:13px}.fs-p{padding:6px 0}.fs-p b{font-weight:500;font-size:17px}.fs-q{display:flex;gap:6px;margin:14px 0 8px}.fs-q button{flex:1;padding:8px 0;border-radius:8px;box-shadow:var(--raise);background:#fff;font-size:13px}.fs-q button[aria-pressed=true]{background:rgba(0,0,0,.95);color:#fff}
 .mcut{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}.mbig{font-size:24px;line-height:1.1}.mweigh{display:flex;gap:8px;margin-top:12px}.mweigh input{flex:1;min-width:0}
 /* ===== Prismatic paper overrides ===== */
 html{background:#fff;overflow-x:clip}body{background:transparent!important;font-family:var(--sans);font-size:15px;line-height:1.6;font-feature-settings:"ss03","cv11";color:var(--ink);position:relative;overflow-x:clip}
@@ -914,6 +914,96 @@ const FOODS_RAW=[
  ["wine","Wine","Any","150 ml glass",125,0,4,0,"D",null],
 ];
 const FOODS={};FOODS_RAW.forEach(r=>{FOODS[r[0]]={id:r[0],n:r[1],w:r[2],s:r[3],kcal:r[4],p:r[5],c:r[6],f:r[7],role:r[8],shop:r[9]||null,fast:!!r[10]};});
+// More foods: pantry, café and the big chains. Approximate, from typical published values; check the label or the chain's app.
+FOODS_RAW.push(
+ ["vegemite","Vegemite","Bega","1 tsp, 5 g",10,1,0,0,"F",["Other","Vegemite",1,""]],
+ ["butter","Butter","Western Star / Devondale","1 tsp, 5 g",36,0,0,4,"F",["Dairy","Butter",1,""]],
+ ["lbutter","Light butter or spread","Western Star Light / Flora Light","2 tsp, 10 g",45,0,0,5,"F",["Dairy","Light spread",1,""]],
+ ["white","White bread","Tip Top","1 slice",90,3,16,1,"C",["Other","White bread",1,"slices"]],
+ ["wmeal","Wholemeal bread","Tip Top / Helga's","1 slice",95,4,15,1,"C",["Other","Wholemeal bread",1,"slices"]],
+ ["burgen","Wholemeal and seeds bread","Bürgen","1 slice",110,5,13,3,"C",["Other","Bürgen bread",1,"slices"]],
+ ["raisin","Raisin or sultana toast","Tip Top / Abbotts","1 slice",100,3,19,2,"C",["Other","Raisin toast",1,"slices"]],
+ ["sultbread","Sultana bread, bakery","Bakers Delight","1 thick slice",140,4,26,2,"C",["Other","Sultana loaf",1,"slices"]],
+ ["jam","Jam","Any","1 tbsp",50,0,12,0,"F",null],
+ ["weetbix","Weet-Bix","Sanitarium","2 biscuits",110,4,20,1,"C",["Other","Weet-Bix",2,""]],
+ ["muesli","Untoasted muesli","Woolies / Coles","50 g",180,5,30,4,"C",["Other","Untoasted muesli",50,"g"]],
+ ["bacon","Short cut bacon","Woolies / Coles","2 rashers",90,11,0,5,"P",["Protein","Short cut bacon",2,""]],
+ ["tasty","Tasty cheese slice","Bega","1 slice, 21 g",85,5,0,7,"F",["Dairy","Cheese slices",1,""]],
+ ["fullmilk","Full cream milk","Any","250 ml",165,9,12,9,"D",["Dairy","Full cream milk",250,"ml"]],
+ ["litemilk","Lite milk","Any","250 ml",115,9,12,4,"D",["Dairy","Lite milk",250,"ml"]],
+ ["fwfull","Flat white, full cream","Café","regular",150,8,11,8,"D",null],
+ ["fwskim","Flat white, skim","Café","regular",80,8,11,0,"D",null],
+ ["fwlite","Flat white, lite milk","Café","regular",110,8,11,4,"D",null],
+ ["cappfull","Cappuccino, full cream","Café","regular",130,7,10,7,"D",null],
+ ["avotoast","Smashed avo on sourdough","Café","1 serve",450,12,40,26,"M",null,1],
+ ["avoegg","Smashed avo with 2 poached eggs","Café","1 serve",600,25,40,36,"M",null,1],
+ ["bne","Bacon and egg roll","Café","1 roll",480,26,40,22,"M",null,1],
+ ["hcc","Ham and cheese croissant","Café","1 croissant",420,17,32,25,"M",null,1],
+ ["bbread","Banana bread with butter","Café","1 slice",400,6,55,17,"S",null,1],
+ ["muffin","Muffin","Café","1 muffin",450,6,60,20,"S",null,1],
+ // McDonald's
+ ["mc_bem","Bacon & Egg McMuffin","McDonald's","1",300,19,27,13,"M",null,1],
+ ["mc_em","Egg McMuffin","McDonald's","1",280,17,26,12,"M",null,1],
+ ["mc_sem","Sausage & Egg McMuffin","McDonald's","1",430,23,27,25,"M",null,1],
+ ["mc_hash","Hash brown","McDonald's","1",140,1,15,8,"S",null,1],
+ ["mc_hot","Hotcakes with syrup and butter","McDonald's","3 hotcakes",520,9,90,12,"M",null,1],
+ ["mc_bigmac","Big Mac","McDonald's","1",500,26,43,25,"M",null,1],
+ ["mc_qp","Quarter Pounder","McDonald's","1",520,30,38,27,"M",null,1],
+ ["mc_cb","Cheeseburger","McDonald's","1",300,16,31,12,"M",null,1],
+ ["mc_dcb","Double cheeseburger","McDonald's","1",440,27,32,23,"M",null,1],
+ ["mc_mcchicken","McChicken","McDonald's","1",430,17,40,22,"M",null,1],
+ ["mc_n6","Chicken McNuggets","McDonald's","6 pieces",260,15,15,15,"M",null,1],
+ ["mc_n10","Chicken McNuggets","McDonald's","10 pieces",430,25,25,25,"M",null,1],
+ ["mc_fs","Fries, small","McDonald's","small",230,3,29,11,"C",null,1],
+ ["mc_fm","Fries, medium","McDonald's","medium",330,4,41,16,"C",null,1],
+ ["mc_fw","McCafé flat white","McDonald's","regular, full cream",150,8,11,8,"D",null,1],
+ // Guzman y Gomez
+ ["gyg_bur","Chicken burrito","Guzman y Gomez","regular",760,45,80,26,"M",null,1],
+ ["gyg_mini","Mini chicken burrito","Guzman y Gomez","mini",380,22,40,13,"M",null,1],
+ ["gyg_nachos","Chicken nachos","Guzman y Gomez","regular",950,45,80,50,"M",null,1],
+ ["gyg_brek","Bacon and egg breakfast burrito","Guzman y Gomez","1",600,30,50,30,"M",null,1],
+ ["gyg_bowl","Chicken burrito bowl with rice","Guzman y Gomez","regular",650,45,70,20,"M",null,1],
+ // KFC, Hungry Jack's, Red Rooster, Oporto
+ ["kfc_or","Original Recipe chicken","KFC","1 piece",250,20,8,15,"M",null,1],
+ ["kfc_zin","Zinger burger","KFC","1",470,27,45,20,"M",null,1],
+ ["kfc_pop","Popcorn chicken","KFC","regular",300,17,18,17,"M",null,1],
+ ["kfc_chips","Chips","KFC","regular",300,4,38,14,"C",null,1],
+ ["hj_wh","Whopper","Hungry Jack's","1",650,30,50,37,"M",null,1],
+ ["hj_whjr","Whopper Jr","Hungry Jack's","1",360,17,30,19,"M",null,1],
+ ["hj_grill","Grilled chicken burger","Hungry Jack's","1",450,35,38,17,"M",null,1],
+ ["hj_chips","Chips","Hungry Jack's","medium",350,4,45,17,"C",null,1],
+ ["rr_q","Quarter chicken, breast","Red Rooster","1/4",350,40,1,20,"M",null,1],
+ ["rr_rippa","Rippa roll","Red Rooster","1",520,30,45,24,"M",null,1],
+ ["op_bondi","Bondi burger","Oporto","1",600,30,50,30,"M",null,1],
+ // Nando's, Subway, Zambrero, Grill'd, Schnitz, sushi, pizza
+ ["n_half","Half chicken","Nando's","1/2 chicken",640,80,2,34,"M",null,1],
+ ["n_wrap","Chicken wrap","Nando's","1",520,40,50,17,"M",null,1],
+ ["n_burg","Chicken breast burger","Nando's","1",500,40,40,18,"M",null,1],
+ ["n_chips","Chips","Nando's","regular",350,5,45,16,"C",null,1],
+ ["sub_t6","Turkey 6 inch","Subway","multigrain, salad",280,18,45,4,"M",null,1],
+ ["sub_sal","Chicken breast salad bowl","Subway","no cheese",250,30,15,7,"M",null,1],
+ ["zam_bowl","Chicken burrito bowl","Zambrero","regular",520,40,55,15,"M",null,1],
+ ["gr_beef","Simply Grill'd beef burger","Grill'd","traditional bun",650,35,45,35,"M",null,1],
+ ["gr_chips","Chips","Grill'd","small",300,4,40,14,"C",null,1],
+ ["sch_roll","Schnitzel roll","Schnitz","1",850,50,70,35,"M",null,1],
+ ["su_ter","Chicken teriyaki hand roll","Sushi Hub / Sushi Sushi","1 roll",200,8,35,3,"S",null,1],
+ ["su_sa","Salmon avocado hand roll","Sushi Hub / Sushi Sushi","1 roll",210,7,32,6,"S",null,1],
+ ["dom_sl","Pizza slice, classic pepperoni","Domino's","1 slice",200,9,22,8,"M",null,1],
+);
+const BRAND_ALIAS={"McDonald's":"maccas mcdonalds macca mccafe","Guzman y Gomez":"gyg guzman mexican","Hungry Jack's":"hj hungry jacks","KFC":"kfc","Nando's":"nandos","Red Rooster":"red rooster","Café":"cafe coffee","Subway":"subway","Zambrero":"zambreros","Grill'd":"grilld burger","Schnitz":"schnitzel","Domino's":"dominos pizza","Sushi Hub / Sushi Sushi":"sushi","Bakers Delight":"bakers"};
+const BETTER={
+ white:"Higher protein: Helga's Lower Carb or Bürgen with 2 eggs adds about 15 g protein.",wmeal:"Add eggs or ham on top to get breakfast past 25 g protein.",
+ raisin:"Higher protein: protein oats or a Chobani Fit bowl gives 30 g+ protein for similar calories.",sultbread:"Higher protein: protein oats or a Chobani Fit bowl gives 30 g+ protein for similar calories.",
+ butter:"Light spread saves about 25 kcal a slice.",fullmilk:"Lite or skim saves 50 to 75 kcal a glass.",fwfull:"Skim flat white saves about 70 kcal a cup.",cappfull:"Skim saves about 60 kcal a cup.",mc_fw:"Ask for skim: saves about 70 kcal.",
+ mc_hot:"A Bacon & Egg McMuffin has twice the protein for fewer calories.",mc_sem:"Bacon & Egg McMuffin saves about 130 kcal with similar protein.",mc_hash:"Skip it or swap for a second coffee.",
+ mc_bigmac:"Double cheeseburger has similar protein for 60 fewer kcal.",mc_fm:"Small fries or none.",mc_fs:"Skip the fries and add a second McMuffin or nuggets for protein.",
+ gyg_bur:"Naked bowl, no cheese or sour cream, saves about 250 kcal with the same protein.",gyg_nachos:"Naked bowl saves about 400 kcal.",
+ kfc_zin:"Original Recipe piece without chips keeps the protein for less.",hj_wh:"Grilled chicken burger has more protein for 200 fewer kcal.",
+ avotoast:"Add 2 poached eggs for protein.",bbread:"Big carbs, little protein. Pair with a protein milk if you have it.",muffin:"Big carbs, little protein. Pair with a protein milk if you have it.",
+ sch_roll:"Grilled chicken and Greek salad keeps the protein for about 300 fewer kcal.",n_chips:"Swap to spicy rice or garden salad.",
+};
+FOODS_RAW.slice(-200).forEach(r=>{if(!FOODS[r[0]])FOODS[r[0]]={id:r[0],n:r[1],w:r[2],s:r[3],kcal:r[4],p:r[5],c:r[6],f:r[7],role:r[8],shop:r[9]||null,fast:!!r[10]};});
+
 // Suggested meal shapes (ids with serves). Carb items (role C) get scaled to the day's carb target.
 const SHAPES={
  b:[[["chobfit",2],["berries",1],["granola",1]],[["oats",1],["whey",1],["berries",1]],[["eggs",1],["whites",1],["helga",2]],[["rokeby",1],["banana",1]],[["greek",1],["whey",0.5],["berries",1],["granola",1]],[["eggs",1.5],["sour",1],["avo",1]],[["cottage",1],["sour",1],["berries",1]]],
@@ -1067,11 +1157,11 @@ function openFoodSearch(date,k,swapIdx){
   const row=id=>{const f=F[id];return '<button type="button" class="fs-it" data-fs="'+id+'"><span><b>'+esc(f.n)+'</b>'+(f.fast?' <span class="mtag">takeaway</span>':'')+'<span class="sub">'+esc(f.w||"")+' · '+esc(f.s||"")+'</span></span><span class="mono">'+f.kcal+'<small>'+f.p+'g P</small></span></button>';};
   const list=s=>{s=(s||"").toLowerCase().trim();let ids;
     if(!s){ids=(role?Object.keys(F).filter(id=>F[id].role===role&&(!swapFrom||id!==swapFrom[0])):[]).concat(recent).concat(Object.keys(F));ids=[...new Set(ids)].slice(0,30);}
-    else{const words=s.split(/\s+/).filter(Boolean);ids=Object.keys(F).filter(id=>{const t=(F[id].n+" "+(F[id].w||"")).toLowerCase().replace(/[^a-z0-9 ]/g,"");return words.every(w=>t.includes(w.replace(/[^a-z0-9]/g,"")));}).sort((a,b)=>((p.like||{})[b]||0)-((p.like||{})[a]||0)).slice(0,40);}
+    else{const words=s.split(/\s+/).filter(Boolean);ids=Object.keys(F).filter(id=>{const t=(F[id].n+" "+(F[id].w||"")+" "+(BRAND_ALIAS[F[id].w]||"")).toLowerCase().replace(/[^a-z0-9 ]/g,"");return words.every(w=>t.includes(w.replace(/[^a-z0-9]/g,"")));}).sort((a,b)=>((p.like||{})[b]||0)-((p.like||{})[a]||0)).slice(0,40);}
     return (!s&&role?'<div class="eb" style="margin:4px 0">Similar, then your usuals</div>':!s&&recent.length?'<div class="eb" style="margin:4px 0">Your usuals first</div>':'')+ids.map(row).join("")+(s?'<button type="button" class="fs-it fs-new" data-fsnew="1"><span><b>Create “'+esc($("#fsQ").value.trim())+'”</b><span class="sub">Enter its calories and protein once, it saves to your foods</span></span></button>':'');};
   const draw=()=>{$("#fsL").innerHTML=list($("#fsQ").value);document.querySelectorAll("#fsL [data-fs]").forEach(b=>b.onclick=()=>{picked=b.dataset.fs;q=swapFrom?swapFrom[1]:1;pick();});const nb=$("#fsL [data-fsnew]");if(nb)nb.onclick=newFood;};
   const pick=()=>{const f=F[picked];$("#fsL").style.display="none";
-    $("#fsPick").innerHTML='<div class="fs-p"><b>'+esc(f.n)+'</b><div class="sub">'+esc(f.w||"")+' · '+esc(f.s||"")+'</div><div class="fs-q">'+[0.5,1,1.5,2,3].map(v=>'<button type="button" data-q="'+v+'" aria-pressed="'+(v===q)+'">'+v+'×</button>').join("")+'</div><div class="mono" id="fsT"></div><div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn" id="fsGo">'+(swapFrom?'Swap in':'Add')+'</button><button type="button" class="btn ghost" id="fsBack">Back</button></div></div>';
+    $("#fsPick").innerHTML='<div class="fs-p"><b>'+esc(f.n)+'</b><div class="sub">'+esc(f.w||"")+' · '+esc(f.s||"")+'</div><div class="fs-q">'+[0.5,1,1.5,2,3].map(v=>'<button type="button" data-q="'+v+'" aria-pressed="'+(v===q)+'">'+v+'×</button>').join("")+'</div><div class="mono" id="fsT"></div>'+(BETTER[picked]?'<div class="fs-better">'+esc(BETTER[picked])+'</div>':'')+'<div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="btn" id="fsGo">'+(swapFrom?'Swap in':'Add')+'</button><button type="button" class="btn ghost" id="fsBack">Back</button></div></div>';
     const t=()=>{$("#fsT").textContent=fK(f.kcal*q)+" kcal · "+Math.round(f.p*q)+"g P · "+Math.round(f.c*q)+"g C · "+Math.round(f.f*q)+"g F";};t();
     document.querySelectorAll("#fsPick [data-q]").forEach(b=>b.onclick=()=>{q=+b.dataset.q;document.querySelectorAll("#fsPick [data-q]").forEach(o=>o.setAttribute("aria-pressed",o===b));t();});
     $("#fsBack").onclick=()=>{$("#fsPick").innerHTML="";$("#fsL").style.display="";};
