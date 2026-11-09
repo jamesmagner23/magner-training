@@ -214,9 +214,11 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .gbig small{font-size:13px;color:var(--ink3);letter-spacing:0}
 .dk .gbig small{color:var(--on3)}
 .wkt{display:flex;align-items:flex-end;gap:4px;height:70px;margin-top:8px}
-.wkt span{flex:1;height:100%;display:flex;align-items:flex-end}
+.wkt span{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}.wkt em{font-style:normal;font-size:10px;color:var(--ink2);font-variant-numeric:tabular-nums}
 .wkt i{display:block;width:100%;border-radius:3px 3px 1px 1px;background:var(--line2)}
-.wkt i.cur{background:var(--accent)}
+.wkt i.done{background:linear-gradient(180deg,#3FB39C,#0588F0)}.wkt i.cur{background:#202020}
+.mus-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}.mus-nav h2{margin:0}.mus-nav .fd-x[disabled]{opacity:.3}
+.mus-dots{display:flex;gap:6px;margin:10px 0 6px;flex-wrap:wrap}.mus-dots button{font-size:12px;padding:4px 9px;border-radius:6px;background:rgba(0,0,0,.04);color:var(--ink2)}.mus-dots button[aria-pressed=true]{background:rgba(0,0,0,.95);color:#fff}
 .wkt-lab{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink3);margin-top:4px}
 .gymstart .tplgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
 .tpl{display:flex;flex-direction:column;gap:2px;text-align:left;padding:12px 14px;border-radius:12px;background:var(--dark2);color:var(--on)}
@@ -748,7 +750,7 @@ function vToday(){
     const nx=Object.values(idx).map(x=>x.d).filter(x=>x.date>TODAY&&(+x.km||["cross","strength"].includes(x.kind))).sort((a,b)=>a.date.localeCompare(b.date))[0];
     heroDate=nx?nx.date:null;hero=doneCard(d)+(nx?sessionCard(nx,weekOf(nx.date),nx.date===addD(TODAY,1)?"Tomorrow":"Next up"):"");}
   h+='<div class="cols two"><div class="stack">'+hero;
-  if(next&&next.date!==d.date&&next.date!==heroDate)h+='<section class="card pad z-'+sessZone(next)+'" style="border-left:3px solid var(--zc)"><div class="eb acc">Next key session · '+fD(next.date,true)+'</div><h2>'+esc(next.title)+'</h2><div class="sub mono" style="margin-top:4px">'+next.km+' km</div><button class="btn ghost" style="margin-top:12px" data-day="'+next.date+'">View session</button></section>';
+   let nextCard="";if(next&&next.date!==d.date&&next.date!==heroDate)nextCard='<section class="card pad z-'+sessZone(next)+'" style="border-left:3px solid var(--zc)"><div class="eb acc">Next key session · '+fD(next.date,true)+'</div><h2>'+esc(next.title)+'</h2><div class="sub mono" style="margin-top:4px">'+next.km+' km</div><button class="btn ghost" style="margin-top:12px" data-day="'+next.date+'">View session</button></section>';
   h+='</div><div class="stack">';
   const days7=w.days.length>7?w.days.slice(dayPos(w),dayPos(w)+7):w.days;
   {const dts=days7.map(x=>x.date); const {t}=weekTotals(dts); const tot=Object.values(t).reduce((q,s2)=>({n:q.n+s2.n,sec:q.sec+s2.sec,tss:q.tss+s2.tss}),{n:0,sec:0,tss:0}); const runWeek=P>0||A>0; const ft=lastFoot(dts);
@@ -759,6 +761,7 @@ function vToday(){
     (runWeek?'<div class="m"><div class="k">Key sessions</div><div class="v">'+qd+'<small>/ '+qual.length+'</small></div></div>':'')+
     '<div class="m"><div class="k">Elevation</div><div class="v">'+Math.round(dts.reduce((q,dd)=>q+Object.values(S.runs).filter(r=>r.date===dd&&isRun(r)).reduce((a,r)=>a+(+r.elev||+r.ascent||0),0),0))+'<small>m</small></div></div>'+
     '</div><button class="linkrow" type="button" data-wkopen="'+days7[0].date+'"><span>Week detail</span><span aria-hidden="true">›</span></button></section>';}
+   h+=nextCard;
   h+='<section><div class="days">'+days7.map(x=>dayRow(x)).join("")+'</div></section>';
   h+=paceCard(true);
   if(S.notes[0])h+='<section class="card pad"><div class="eb acc">From Claude · '+esc(S.notes[0].date?fD(S.notes[0].date):"")+'</div><h2>'+esc(S.notes[0].title||"")+'</h2><div class="prose"><p>'+esc((S.notes[0].body||"").split("\n")[0])+'</p></div><button class="btn ghost" style="margin-top:12px" data-tab="coach">All updates</button></section>';
@@ -2050,11 +2053,18 @@ function vGym(){
   h+='<section class="card pad"><div class="ch"><div><div class="eb">Total lifted</div><h2>'+(UI.gymP==="week"?"This week":UI.gymP==="month"?"Last 4 weeks":"This year")+'</h2></div><div class="seg" role="group" aria-label="Period">'+[["week","Week"],["month","4 weeks"],["year","Year"]].map(o=>'<button data-gymp="'+o[0]+'" aria-pressed="'+(UI.gymP===o[0])+'">'+o[1]+'</button>').join("")+'</div></div>'+
     '<div class="gbig">'+fT(A.t)+'</div>'+
     '<div class="metrics"><div class="m"><div class="k">Sessions</div><div class="v">'+A.n+'</div></div><div class="m"><div class="k">Sets</div><div class="v">'+A.sets+'</div></div><div class="m"><div class="k">Reps</div><div class="v">'+A.reps+'</div></div><div class="m"><div class="k">Annual run rate</div><div class="v">'+fT(rr)+'<small>/ yr</small></div></div></div>'+
-    '<div class="eb" style="margin-top:16px">Weekly, last 12 weeks</div><div class="wkt">'+wk.map(x=>'<span title="'+fD(x.m)+': '+fT(x.t)+'"><i style="height:'+Math.max(2,x.t/wmx*100).toFixed(1)+'%"'+(x.m===monOf(TODAY)?' class="cur"':'')+'></i></span>').join("")+'</div><div class="wkt-lab"><span>'+fD(wk[0].m)+'</span><span>This week</span></div></section>';
+    '<div class="eb" style="margin-top:16px">Weekly, last 12 weeks</div><div class="wkt">'+wk.map(x=>'<span title="'+fD(x.m)+': '+fT(x.t)+'">'+(x.t?'<em>'+(x.t>=1000?(x.t/1000).toFixed(x.t>=10000?0:1):Math.round(x.t))+'</em>':'')+'<i style="height:'+Math.max(2,x.t/wmx*100*0.82).toFixed(1)+'%" class="'+(x.m===monOf(TODAY)?'cur':x.t?'done':'')+'"></i></span>').join("")+'</div><div class="wkt-lab"><span>'+fD(wk[0].m)+'</span><span>This week</span></div></section>';
   h+='<section class="card pad"><div class="eb">Sessions</div><h2>Recent</h2><div class="glist">'+ls.slice().reverse().slice(0,8).map(l=>{const s=sessStats(l);const top=Object.keys(s.mus).sort((x,y)=>s.mus[y]-s.mus[x]).slice(0,3).map(k=>MUSC[k]).join(", ");
     return '<button type="button" class="grow" data-liftopen="'+l.id+'"><span class="wkd-date">'+DOW[pISO(l.date).getDay()]+' '+pISO(l.date).getDate()+' '+MON[pISO(l.date).getMonth()]+'</span><span class="wkd-t">'+esc(l.name||"Session")+'<span class="sub">'+s.sets+' sets · '+esc(top)+'</span></span><span class="wkd-n">'+fT(s.t)+'</span><span class="r">›</span></button>';}).join("")+'</div></section>';
   h+='</div><div class="stack">';
-  h+='<section class="card pad"><div class="eb">Muscles · '+(UI.gymP==="week"?"this week":UI.gymP==="month"?"last 4 weeks":"this year")+'</div><h2>What you hit</h2>'+(A.sets?bodySvg(A.mus)+splitBar(A.mus)+muscleRank(A.mus,A.mt,6)+'<div class="sub" style="margin-top:8px">Counted in sets: a full set for the main muscle, half a set for helpers.</div>':'<div class="empty">Nothing logged in this period yet.</div>')+'</section>';
+  const MP=[["week","This week"],["last","Last week"],["month","This month"],["ytd","Year to date"]];
+  const mpRange=p=>{const m=monOf(TODAY);if(p==="last")return [addD(m,-7),addD(m,-1)];if(p==="month")return [TODAY.slice(0,8)+"01",TODAY];if(p==="ytd")return [TODAY.slice(0,5)+"01-01",TODAY];return [m,addD(m,6)];};
+  if(!UI.musP){const [x,y]=mpRange("week");UI.musP=liftAgg(x,y).sets?"week":"last";}
+  const [ma,mb]=mpRange(UI.musP), MA=liftAgg(ma,mb), mi=MP.findIndex(x=>x[0]===UI.musP);
+  h+='<section class="card pad" id="musCard"><div class="ch"><div class="eb">Muscles</div><span class="sub mono">'+(MA.n?MA.n+' session'+(MA.n>1?'s':'')+' · '+fT(MA.t):'')+'</span></div>'+
+    '<div class="mus-nav"><button type="button" class="fd-x" data-musstep="1" aria-label="Earlier period"'+(mi===MP.length-1?' disabled':'')+'>‹</button><h2>'+MP[mi][1]+'</h2><button type="button" class="fd-x" data-musstep="-1" aria-label="Later period"'+(mi===0?' disabled':'')+'>›</button></div>'+
+    '<div class="mus-dots">'+MP.map((x,i)=>'<button type="button" data-musp="'+x[0]+'" aria-pressed="'+(i===mi)+'">'+({week:"This week",last:"Last week",month:"Month",ytd:"YTD"})[x[0]]+'</button>').join("")+'</div>'+
+    (MA.sets?bodySvg(MA.mus)+splitBar(MA.mus)+muscleRank(MA.mus,MA.mt,6)+'<div class="sub" style="margin-top:8px">Counted in sets: a full set for the main muscle, half a set for helpers. Swipe to change period.</div>':'<div class="empty">Nothing logged '+MP[mi][1].toLowerCase()+' yet.'+(mi===0?' Swipe for last week.':'')+'</div>')+'</section>';
   const prs=bestLifts().slice(0,6);
   if(prs.length)h+='<section class="card pad"><div class="eb">Best lifts</div><h2>Estimated 1 rep max</h2><table class="tbl" style="margin-top:6px"><tbody>'+prs.map(p=>'<tr><td>'+esc(p.name)+'<div class="sub">'+p.w+' × '+p.r+' on '+fD(p.date)+'</div></td><td class="r mono">'+Math.round(p.e)+' kg</td></tr>').join("")+'</tbody></table></section>';
   h+='</div></div>';
@@ -2207,6 +2217,9 @@ function render(){
 function setTab(t){UI.tab=t;UI.sel=null;try{localStorage.setItem("mt-tab",t);}catch(e){}closeSheet();render();scrollTo(0,0);}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-tab]");if(b&&b.tagName==="BUTTON"){setTab(b.dataset.tab);}});
 function bind(r){
+  r.querySelectorAll("[data-musp]").forEach(b=>b.onclick=()=>{UI.musP=b.dataset.musp;render();});
+  r.querySelectorAll("[data-musstep]").forEach(b=>b.onclick=()=>{const L=["week","last","month","ytd"];const i=L.indexOf(UI.musP||"week")+(+b.dataset.musstep);if(i>=0&&i<L.length){UI.musP=L[i];render();}});
+  const mc=$("#musCard",r);if(mc){let x0=null;mc.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;},{passive:true});mc.addEventListener("touchend",e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)<50)return;const L=["week","last","month","ytd"];const i=L.indexOf(UI.musP||"week")+(dx>0?1:-1);if(i>=0&&i<L.length){UI.musP=L[i];render();}},{passive:true});}
   r.querySelectorAll("[data-gomeals]").forEach(b=>b.onclick=()=>{UI.tab="meals";render();scrollTo(0,0);});
   bindMeals(r);
   r.querySelectorAll("[data-gymopen]").forEach(b=>b.onclick=()=>openLift(b.dataset.gymopen));
