@@ -1144,10 +1144,6 @@ function vMeals(){
   // learning + shopping
   const p=prefs(),F=allFoods();const fav=Object.entries(p.like||{}).filter(([id])=>F[id]).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([id])=>F[id].n);
   h+='<section class="card pad" style="margin-top:14px"><div class="ch"><div class="eb acc">Learning your taste</div><button type="button" class="lg-sw" data-freplan="'+mon+'">Refresh suggestions</button></div><div class="sub" style="margin-top:6px">'+(fav.length?'Favouring: '+esc(fav.join(", "))+'.':'Log and swap a few meals and suggestions start leaning towards what you actually eat.')+' Refresh rebuilds the unlogged meals from today on.</div></section>';
-  const sl=shopList(mon), ticks=(()=>{try{return JSON.parse(localStorage.getItem("mt-shop-"+mon)||"{}");}catch(e){return {};}})();
-  h+='<section class="card pad" style="margin-top:14px"><div class="ch"><div class="eb acc">Woolies / Coles list</div><span class="sub mono">'+fD(mon,true)+' week</span></div>'+
-    Object.entries(sl).filter(([,v])=>v.length).map(([g,v])=>'<div class="eb" style="margin:14px 0 4px">'+g+'</div>'+v.map(o=>{const kk=g+o.n;return '<label class="shopi"><input type="checkbox" data-shop="'+esc(kk)+'" data-shopwk="'+mon+'"'+(ticks[kk]?' checked':'')+'><span>'+esc(o.n)+'</span><span class="mono sub">'+esc(o.label)+'</span></label>';}).join("")).join("")+
-    '<div class="sub" style="margin-top:12px">Built from the suggested meals. Takeaway days are left off.</div></section>';
   h+='<div class="sub" style="margin:14px 4px 0">Calories and macros are estimates per serve. Check the label on packaged food.</div>';
   return h;
 }
