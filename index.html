@@ -485,7 +485,7 @@ function hideSignin(){$("#signin").hidden=true;$("#app").hidden=false;$("#topbar
 
 const S={chat:[],weeks:{},runs:{},log:{},lifts:{},meals:{},notes:[],settings:{vdot:52,goalMarathon:"2:57:00"},db:null,loaded:false};
 const UI={tab:"today",sel:null,openWeek:null,recipe:4};
-try{const t=localStorage.getItem("mt-tab"); if(t) UI.tab=t;}catch(e){}
+try{const t=localStorage.getItem("mt-tab"); if(t&&t!=="runs") UI.tab=t;}catch(e){}
 
 /* utils */
 const $=(s,r=document)=>r.querySelector(s);
@@ -758,6 +758,7 @@ function vFitness(){
     '<div class="sub" style="margin-top:10px">Threshold HR is your average pulse over the last 20 min of a hard 30 min solo effort, or the average of a flat 10km race. Leave blank and I will estimate it from your imported runs.</div>'+
     '<div class="hr"></div><div class="flabel">Race calculator</div><div class="grid2" style="margin-top:8px"><select id="cD"><option value="5000">5km</option><option value="10000">10km</option><option value="21097.5">Half</option><option value="42195">Marathon</option></select><input id="cT" type="text" placeholder="17:50"></div><div class="sub" id="cO" style="margin-top:8px">Enter a race time to see its VDOT.</div>'+
     '<button class="btn block" id="sSave" style="margin-top:14px">Save inputs</button></section>';
+  h+=shoeCard()+'<details class="card pad older" style="margin-top:14px"><summary><span class="eb">Import a file manually</span><div class="sub" style="margin-top:4px">Only needed if something didn\'t come through from Strava</div></summary><div style="margin-top:12px"><label class="drop" id="drop" for="fIn"><b style="color:var(--accent)">Import from Garmin or Strava</b><div style="margin-top:4px">Garmin Connect activities CSV, Strava activities.csv, or .tcx / .gpx files</div></label><input id="fIn" type="file" multiple accept=".csv,.tcx,.gpx" hidden><div class="sub" style="margin-top:10px">Garmin Connect on a computer: Activities, All activities, Export CSV. Gym, bike and swim sessions import too and count as cross-training.</div></div></details>'; return h;
   return h;
 }
 
@@ -768,7 +769,7 @@ function vRuns(){
   if(!all.length)h+='<div class="empty">Nothing yet. First run of the block is Tuesday 27 October.</div>';
   else h+='<div class="days" style="margin-top:12px">'+all.slice(0,150).map(r=>{const it=idx[r.date];const z=isRun(r)?zoneOfPace(r.sec/r.km):"x";const dd=pISO(r.date);
     return '<button class="day z-'+z+'" data-day="'+r.date+'"><span class="tile"><span class="a">'+DOW[dd.getDay()].toUpperCase()+'</span><span class="b">'+dd.getDate()+'</span><span class="a">'+MON[dd.getMonth()].toUpperCase()+'</span></span><span style="min-width:0"><div class="t">'+esc(r.title||r.type||"Activity")+'</div><div class="s">'+(isRun(r)?(+r.km).toFixed(2)+' km · '+fP(r.sec/r.km)+'/km':esc(r.type||"Cross-train"))+' · '+fDur(r.sec)+(r.avgHr?' · '+Math.round(r.avgHr)+' bpm':'')+(it&&isRun(r)?' · plan '+it.d.km+' km':'')+'</div></span><span class="r">›</span></button>';}).join("")+'</div>';
-  h+='</section>'+shoeCard()+'<details class="card pad older" style="margin-top:14px"><summary><span class="eb">Import a file manually</span><div class="sub" style="margin-top:4px">Only needed if something didn\'t come through from Strava</div></summary><div style="margin-top:12px"><label class="drop" id="drop" for="fIn"><b style="color:var(--accent)">Import from Garmin or Strava</b><div style="margin-top:4px">Garmin Connect activities CSV, Strava activities.csv, or .tcx / .gpx files</div></label><input id="fIn" type="file" multiple accept=".csv,.tcx,.gpx" hidden><div class="sub" style="margin-top:10px">Garmin Connect on a computer: Activities, All activities, Export CSV. Gym, bike and swim sessions import too and count as cross-training.</div></div></details>'; return h;
+  h+='</section>';
 }
 
 /* ---------- Meals ---------- */
@@ -1846,7 +1847,7 @@ function gymCtx(){const a=liftAgg(addD(TODAY,-27),TODAY);if(!a.n)return "GYM: no
   return "GYM last 4 weeks: "+a.n+" sessions, "+fT(a.t)+" lifted, "+a.sets+" sets. Top muscles by sets: "+top+". Last session "+lifts().slice(-1)[0].date+" "+(lifts().slice(-1)[0].name||"");}
 
 /* Shell */
-const TABS=[["today","Today"],["plan","Plan"],["fitness","Fitness"],["gym","Gym"],["meals","Meals"],["runs","Runs"],["coach","Coach"]];
+const TABS=[["today","Today"],["plan","Plan"],["fitness","Fitness"],["gym","Gym"],["meals","Meals"],["coach","Coach"]];
 function render(){
   const y=scrollY; const v={today:vToday,plan:vPlan,fitness:vFitness,gym:vGym,meals:vMeals,runs:vRuns,coach:vCoach}[UI.tab]||vToday;
   $("#app").innerHTML=v();
