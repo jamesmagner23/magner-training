@@ -3,8 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F7F5F0" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#12110F" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -15,37 +14,33 @@
 <title>Magner Training</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
 <style>
 /* Layout: warm paper ground, light data cards and dark "instrument" cards, mono eyebrows and numbers, earthy zone colours. Single column on phone, two columns on desktop. */
 :root{
-  --bg:#F7F5F0; --card:#FFFFFF; --sunken:#EFECE5; --input:#ECE9E2;
-  --ink:#23211C; --ink2:#5A564D; --ink3:#8E887C; --line:#E3DFD5; --line2:#CFCABE;
-  --accent:#B8652F; --accent-ink:#FFFFFF; --accentSoft:rgba(184,101,47,.12);
-  --mbase:#E6E1D7; --mline:#CFCABE; --dark:#1D1B18; --dark2:#2A2723; --dline:rgba(242,238,230,.12); --on:#F2EEE6; --on2:rgba(242,238,230,.62); --on3:rgba(242,238,230,.38);
-  --z-rec:#9AA6B2; --z-st:#7F9B70; --z-mp:#C68B33; --z-lt2:#C2632F; --z-vo2:#8A2C33; --z-sp:#6E4B7E; --z-x:#B5AFA3;
-  --good:#5E8A55; --warn:#A87A2C; --bad:#A3392D;
-  --shadow:0 1px 2px rgba(40,32,20,.05),0 8px 24px -14px rgba(40,32,20,.22);
-  --sans:"Schibsted Grotesk","Helvetica Neue",Helvetica,Arial,sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* Reassurance theme: white canvas, black ink, promise purple used sparingly, mint/blue/lavender light, warm charcoal instrument panels */
+  --bg:#FFFFFF; --card:#FFFFFF; --sunken:#F4F4F5; --input:#F2F2F3;
+  --ink:#000000; --ink2:#2E2E2E; --ink3:#8F8F8F; --line:#E0E0E0; --line2:#CFCFCF;
+  --accent:#5D48DB; --accent-ink:#FFFFFF; --accentSoft:rgba(93,72,219,.10);
+  --mbase:#EDEDEF; --mline:#D6D6DA; --dark:#2F2A2D; --dark2:#3A3438; --dline:rgba(255,255,255,.12); --on:#FFFFFF; --on2:rgba(255,255,255,.66); --on3:rgba(255,255,255,.40);
+  --z-rec:#A9B8C6; --z-st:#4FD8AB; --z-mp:#5EA1E7; --z-lt2:#8375D0; --z-vo2:#5D48DB; --z-sp:#D477A8; --z-x:#C9C9CE;
+  --good:#2FA59E; --warn:#D9962B; --bad:#E0565B;
+  --g-mint:linear-gradient(123.97deg,#4FD8AB 10.62%,#5EA1E7 43.12%,#8375D0 89.61%);
+  --g-blue:linear-gradient(166.14deg,#53AAFF 1.38%,#3577BF 38.84%,#000000 74.76%);
+  --g-proof:linear-gradient(243.6deg,#3FD194,#2FA59E);
+  --g-panel:linear-gradient(90deg,#352F33 0,#292526 100%);
+  --shadow:0 10px 40px rgba(0,0,0,.07);
+  --shadow-lg:0 27px 104px rgba(0,0,0,.12);
+  --sans:"DM Sans","sofia",Arial,sans-serif;
+  --mono:"DM Sans","sofia",Arial,sans-serif;
+  color-scheme:light;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#12110F; --card:#1B1916; --sunken:#24211D; --input:#2A2622; --mbase:#2C2824; --mline:#3A3530;
-  --ink:#F2EEE6; --ink2:rgba(242,238,230,.68); --ink3:rgba(242,238,230,.42); --line:#2E2A25; --line2:#3D3832;
-  --accent:#D47A3F; --accentSoft:rgba(212,122,63,.16);
-  --dark:#0B0A09; --dark2:#1A1815; --dline:rgba(242,238,230,.10);
-  --z-rec:#8D99A6; --z-st:#8BAA7B; --z-mp:#D29A44; --z-lt2:#D3723C; --z-vo2:#B4434B; --z-sp:#8E6AA0; --z-x:#6E685E;
-  --good:#7DAA72; --warn:#C99A48; --bad:#D0574A;
-  --shadow:0 1px 0 rgba(0,0,0,.4); color-scheme:dark;
-}}
 :root[data-theme="dark"]{
-  --bg:#12110F; --card:#1B1916; --sunken:#24211D; --input:#2A2622; --mbase:#2C2824; --mline:#3A3530;
-  --ink:#F2EEE6; --ink2:rgba(242,238,230,.68); --ink3:rgba(242,238,230,.42); --line:#2E2A25; --line2:#3D3832;
-  --accent:#D47A3F; --accentSoft:rgba(212,122,63,.16);
-  --dark:#0B0A09; --dark2:#1A1815; --dline:rgba(242,238,230,.10);
-  --z-rec:#8D99A6; --z-st:#8BAA7B; --z-mp:#D29A44; --z-lt2:#D3723C; --z-vo2:#B4434B; --z-sp:#8E6AA0; --z-x:#6E685E;
-  --good:#7DAA72; --warn:#C99A48; --bad:#D0574A;
-  --shadow:0 1px 0 rgba(0,0,0,.4); color-scheme:dark;
+  --bg:#000000; --card:#1C1A1B; --sunken:#262325; --input:#2A2729; --mbase:#2E2A2D; --mline:#3A3538;
+  --ink:#FFFFFF; --ink2:rgba(255,255,255,.72); --ink3:rgba(255,255,255,.46); --line:#2E2A2D; --line2:#3D383B;
+  --accent:#8F7FF0; --accentSoft:rgba(143,127,240,.16);
+  --dark:#292526; --dark2:#352F33; --dline:rgba(255,255,255,.10);
+  --shadow:none; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{padding-top:0}body{margin:0;padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}
@@ -135,7 +130,7 @@ h2{font-size:21px;font-weight:500;letter-spacing:-.02em;line-height:1.15;margin:
 .bul div::before{content:"";width:7px;height:7px;border-radius:2px;margin-top:7px;background:var(--accent)}
 .coach{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;border-left:3px solid var(--accent);padding:10px 12px;border-radius:0 10px 10px 0;background:var(--accentSoft);font-size:14px}
 .coach .eb{color:var(--accent);margin-top:2px}
-.dk .coach{background:rgba(212,122,63,.14)}
+.dk .coach{background:rgba(143,127,240,.16)}
 
 /* Week bars */
 .bars{width:100%;height:auto;display:block;margin-top:10px}
@@ -427,6 +422,41 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .dots{display:flex;gap:3px;align-items:flex-end;height:22px}
 .dots i{width:6px;border-radius:2px;background:var(--z-lt2);display:block}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ===== Reassurance theme overrides ===== */
+body{font-family:var(--sans);letter-spacing:-.005em}
+.mono{font-family:var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.eb{font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:-.005em;text-transform:none;color:var(--ink3)}
+.eb.acc{color:var(--accent)}
+h1{font-size:40px;font-weight:500;letter-spacing:-.0575em;line-height:1.02}
+.head h1{background:var(--g-blue);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;padding-bottom:.06em}
+h2{font-size:22px;font-weight:500;letter-spacing:-.0475em;line-height:1.12}
+.lede{letter-spacing:-.015em}
+.card{border:0;border-radius:28px;box-shadow:var(--shadow)}
+.card.pad,.card .pad{padding:22px}
+.btn{background:#000;color:#fff;border-radius:999px;padding:11px 18px;font-weight:500;letter-spacing:-.0175em;font-size:14px}
+.btn.ghost{background:#fff;color:#000;border:0;box-shadow:0 8px 30px rgba(0,0,0,.06),inset 0 0 0 1px var(--line)}
+.dk .btn.ghost{background:transparent;color:var(--on);box-shadow:inset 0 0 0 1px var(--dline)}
+.nav{background:var(--sunken)}
+.nav button{font-weight:500;letter-spacing:-.0175em;color:var(--ink3)}
+.nav button[aria-current="page"]{background:#000;color:#fff}
+.mark{background:#000}.mark::after{border-color:#fff}
+.dk,.card.dk{background:var(--g-panel)!important;color:var(--on);border:0;border-radius:28px}
+.fab{background:#000;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+.seg{border-radius:999px}.seg button{border-radius:999px;font-family:var(--sans)}
+input,textarea,select{border-radius:14px!important;font-family:var(--sans)}
+.lg-sw{color:var(--accent);border-color:var(--line)}
+.mtag{color:var(--accent)}
+.qa-sp button[aria-pressed=true],.dchk input:checked+span{background:#000!important;border-color:#000!important;color:#fff!important}
+.mwd{border-radius:16px}.mwd.sel{background:#000;color:#fff}.mwd.is-today{border-color:var(--accent)}
+.mtg>div{border-radius:14px}
+.msg.me{background:#000;color:#fff}
+.scrim .sheet{border-radius:28px 28px 0 0}
+.good,.ok{color:var(--good)}
+.m .k,.chip,.defs dt,.wkd-date,.lg-hdr,.sc-grid .k,.legend,.flabel,.msg .when,.tile .a{text-transform:none;letter-spacing:-.005em;font-weight:500}
+.m .k,.sc-grid .k,.flabel,.lg-hdr,.defs dt{font-size:12px}.chip{font-size:12px;border-radius:999px}.legend{font-size:12px}
+.dk .btn:not(.ghost){background:#fff;color:#000}
+.mtg span,.mright{font-family:var(--sans)}
 </style>
 
 </head>
