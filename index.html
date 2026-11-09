@@ -9,38 +9,29 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Training">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png?v=29">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=29">
+<link rel="icon" href="icon-192.png?v=31">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=31">
 <title>Magner Training</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&display=swap">
 <style>
 /* Layout: warm paper ground, light data cards and dark "instrument" cards, mono eyebrows and numbers, earthy zone colours. Single column on phone, two columns on desktop. */
 :root{
-  /* Reassurance theme: white canvas, black ink, promise purple used sparingly, mint/blue/lavender light, warm charcoal instrument panels */
-  --bg:#FFFFFF; --card:#FFFFFF; --sunken:#F4F4F5; --input:#F2F2F3;
-  --ink:#000000; --ink2:#2E2E2E; --ink3:#8F8F8F; --line:#E0E0E0; --line2:#CFCFCF;
-  --accent:#5D48DB; --accent-ink:#FFFFFF; --accentSoft:rgba(93,72,219,.10);
-  --mbase:#EDEDEF; --mline:#D6D6DA; --dark:#2F2A2D; --dark2:#3A3438; --dline:rgba(255,255,255,.12); --on:#FFFFFF; --on2:rgba(255,255,255,.66); --on3:rgba(255,255,255,.40);
-  --z-rec:#A9B8C6; --z-st:#4FD8AB; --z-mp:#5EA1E7; --z-lt2:#8375D0; --z-vo2:#5D48DB; --z-sp:#D477A8; --z-x:#C9C9CE;
-  --good:#2FA59E; --warn:#D9962B; --bad:#E0565B;
-  --g-mint:linear-gradient(123.97deg,#4FD8AB 10.62%,#5EA1E7 43.12%,#8375D0 89.61%);
-  --g-blue:linear-gradient(166.14deg,#53AAFF 1.38%,#3577BF 38.84%,#000000 74.76%);
-  --g-proof:linear-gradient(243.6deg,#3FD194,#2FA59E);
-  --g-panel:linear-gradient(90deg,#352F33 0,#292526 100%);
-  --shadow:0 10px 40px rgba(0,0,0,.07);
-  --shadow-lg:0 27px 104px rgba(0,0,0,.12);
-  --sans:"DM Sans","sofia",Arial,sans-serif;
-  --mono:"DM Sans","sofia",Arial,sans-serif;
+  /* Prismatic paper: white canvas, monochrome ink, near-black actions, one selected blue, translucent spectral light */
+  --bg:#FFFFFF; --card:#FFFFFF; --sunken:#F6F6F6; --input:#FFFFFF;
+  --ink:#202020; --ink2:#646464; --ink3:#8D8D8D; --line:#F0F0F0; --line2:rgba(0,0,0,.10);
+  --accent:#0588F0; --accent-ink:#FFFFFF; --accentSoft:rgba(5,136,240,.08);
+  --mbase:#F0F0F0; --mline:#E4E4E4; --dark:rgba(235,235,235,.7); --dark2:#FFFFFF; --dline:rgba(0,0,0,.06); --on:#202020; --on2:#646464; --on3:#8D8D8D;
+  --z-rec:#C6C6C6; --z-st:#3FB39C; --z-mp:#0588F0; --z-lt2:#973EC6; --z-vo2:#F6009D; --z-sp:#FF5A1F; --z-x:#D9D9D9;
+  --good:#2A9D6F; --warn:#D98A1C; --bad:#E5484D;
+  --spectral:linear-gradient(90deg,rgba(255,59,0,.2) 0%,rgba(246,0,157,.2) 38%,rgba(151,62,198,.2) 71%,rgba(0,142,255,.2) 100%);
+  --raise:0 0 0 .5px rgba(0,0,0,.06),0 1px 1px -1px rgba(0,0,0,.1),0 1px 2px 0 rgba(0,0,0,.05);
+  --stage:0 0 0 .5px rgba(0,0,0,.07),0 62px 83px 0 rgba(0,0,0,.05),0 33px 44px 0 rgba(0,0,0,.04),0 18.7px 24.9px 0 rgba(0,0,0,.04),0 9.9px 13.2px 0 rgba(0,0,0,.03),0 4.1px 5.5px 0 rgba(0,0,0,.02);
+  --shadow:var(--raise);
+  --sans:"InterVariable","Inter",Arial,sans-serif;
+  --mono:"InterVariable","Inter",Arial,sans-serif;
   color-scheme:light;
-}
-:root[data-theme="dark"]{
-  --bg:#000000; --card:#1C1A1B; --sunken:#262325; --input:#2A2729; --mbase:#2E2A2D; --mline:#3A3538;
-  --ink:#FFFFFF; --ink2:rgba(255,255,255,.72); --ink3:rgba(255,255,255,.46); --line:#2E2A2D; --line2:#3D383B;
-  --accent:#8F7FF0; --accentSoft:rgba(143,127,240,.16);
-  --dark:#292526; --dark2:#352F33; --dline:rgba(255,255,255,.10);
-  --shadow:none; color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{padding-top:0}body{margin:0;padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}
@@ -423,40 +414,50 @@ input[type=date],input[type=time]{min-height:44px;-webkit-appearance:none;appear
 .dots i{width:6px;border-radius:2px;background:var(--z-lt2);display:block}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* ===== Reassurance theme overrides ===== */
-body{font-family:var(--sans);letter-spacing:-.005em}
-.mono{font-family:var(--sans);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-.eb{font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:-.005em;text-transform:none;color:var(--ink3)}
-.eb.acc{color:var(--accent)}
-h1{font-size:40px;font-weight:500;letter-spacing:-.0575em;line-height:1.02}
-.head h1{background:var(--g-blue);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;padding-bottom:.06em}
-h2{font-size:22px;font-weight:500;letter-spacing:-.0475em;line-height:1.12}
-.lede{letter-spacing:-.015em}
-.card{border:0;border-radius:28px;box-shadow:var(--shadow)}
-.card.pad,.card .pad{padding:22px}
-.btn{background:#000;color:#fff;border-radius:999px;padding:11px 18px;font-weight:500;letter-spacing:-.0175em;font-size:14px}
-.btn.ghost{background:#fff;color:#000;border:0;box-shadow:0 8px 30px rgba(0,0,0,.06),inset 0 0 0 1px var(--line)}
-.dk .btn.ghost{background:transparent;color:var(--on);box-shadow:inset 0 0 0 1px var(--dline)}
-.nav{background:var(--sunken)}
-.nav button{font-weight:500;letter-spacing:-.0175em;color:var(--ink3)}
-.nav button[aria-current="page"]{background:#000;color:#fff}
-.mark{background:#000}.mark::after{border-color:#fff}
-.dk,.card.dk{background:var(--g-panel)!important;color:var(--on);border:0;border-radius:28px}
-.fab{background:#000;box-shadow:0 12px 30px rgba(0,0,0,.25)}
-.seg{border-radius:999px}.seg button{border-radius:999px;font-family:var(--sans)}
-input,textarea,select{border-radius:14px!important;font-family:var(--sans)}
-.lg-sw{color:var(--accent);border-color:var(--line)}
-.mtag{color:var(--accent)}
-.qa-sp button[aria-pressed=true],.dchk input:checked+span{background:#000!important;border-color:#000!important;color:#fff!important}
-.mwd{border-radius:16px}.mwd.sel{background:#000;color:#fff}.mwd.is-today{border-color:var(--accent)}
-.mtg>div{border-radius:14px}
-.msg.me{background:#000;color:#fff}
-.scrim .sheet{border-radius:28px 28px 0 0}
-.good,.ok{color:var(--good)}
-.m .k,.chip,.defs dt,.wkd-date,.lg-hdr,.sc-grid .k,.legend,.flabel,.msg .when,.tile .a{text-transform:none;letter-spacing:-.005em;font-weight:500}
-.m .k,.sc-grid .k,.flabel,.lg-hdr,.defs dt{font-size:12px}.chip{font-size:12px;border-radius:999px}.legend{font-size:12px}
-.dk .btn:not(.ghost){background:#fff;color:#000}
+
+/* ===== Prismatic paper overrides ===== */
+html{background:#fff}body{background:transparent!important;font-family:var(--sans);font-size:15px;line-height:1.6;font-feature-settings:"ss03","cv11";color:var(--ink);position:relative;overflow-x:hidden}
+body::before{content:"";position:absolute;left:-10%;right:-10%;top:170px;height:420px;background:var(--spectral);border-radius:300px;filter:blur(60px);pointer-events:none;z-index:-1;opacity:.9}
+body::after{content:"";position:absolute;left:0;right:0;top:0;height:900px;background:linear-gradient(180deg,rgba(255,255,255,0) 40%,#fff 100%);pointer-events:none;z-index:-1}
+.mono{font-family:var(--sans);font-variant-numeric:tabular-nums;letter-spacing:0}
+.eb{font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink3)}
+.eb.acc{color:var(--ink3)}
+.head .eb.acc{color:var(--accent)}
+h1{font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1.05;color:var(--ink)}
+h2{font-size:20px;font-weight:500;letter-spacing:-.01em;line-height:1.3}
+.lede{color:var(--ink2);font-size:15px;line-height:24px}
+.sub{color:var(--ink2)}
+.card{background:#fff;border:0;border-radius:12px;box-shadow:var(--raise)}
+.card.pad,.card .pad{padding:20px}
+.dk,.card.dk{background:rgba(235,235,235,.7)!important;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);color:var(--ink);border:0;border-radius:12px;box-shadow:var(--stage)}
+.dk h1,.dk h2,.dk .t,.dk b{color:var(--ink)}
+.btn{height:32px;padding:0 12px;background:rgba(0,0,0,.95);color:#fff;border-radius:8px;font-size:13px;font-weight:500;line-height:20px;letter-spacing:0;justify-content:center}
+.btn.block{height:40px}
+.btn.ghost{background:#fff;color:var(--ink);border:0;box-shadow:var(--raise)}
+.dk .btn.ghost{background:#fff;color:var(--ink);box-shadow:var(--raise)}
+.dk .btn:not(.ghost){background:rgba(0,0,0,.95);color:#fff}
+.nav{background:rgba(0,0,0,.04);border-radius:8px;padding:2px}
+.nav button{border-radius:6px;font-size:13px;font-weight:450;color:var(--ink2);padding:6px 10px}
+.nav button[aria-current="page"]{background:#fff;color:var(--ink);box-shadow:var(--raise)}
+.mark{background:#202020}.mark::after{border-color:#fff}
+.fab{background:rgba(0,0,0,.95);border-radius:12px;width:52px;height:52px;font-size:26px;box-shadow:var(--stage)}
+.seg{background:rgba(0,0,0,.04);border-radius:8px}.seg button{border-radius:6px;font-family:var(--sans);font-size:13px;letter-spacing:0}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:var(--raise)}
+input,textarea,select{border-radius:8px!important;font-family:var(--sans);background:#fff!important;box-shadow:var(--raise);border:0!important}
+.lg-sw{color:var(--ink);border-radius:6px;border:0;box-shadow:var(--raise);background:#fff}
+.mtag{color:var(--accent);border-radius:6px}
+.qa-sp button,.dchk span{border-radius:6px!important}
+.qa-sp button[aria-pressed=true],.dchk input:checked+span{background:rgba(0,0,0,.95)!important;border-color:transparent!important;color:#fff!important}
+.mwd{border-radius:10px;background:#fff;border:0;box-shadow:var(--raise)}.mwd.sel{background:rgba(0,0,0,.95);color:#fff}.mwd.is-today{box-shadow:0 0 0 1.5px var(--accent)}
+.mtg>div{border-radius:10px;background:rgba(0,0,0,.024)}
+.msg{border-radius:12px}.msg.me{background:rgba(0,0,0,.95);color:#fff}
+.scrim .sheet{border-radius:16px 16px 0 0}
+.m .k,.chip,.defs dt,.wkd-date,.lg-hdr,.sc-grid .k,.legend,.flabel,.msg .when,.tile .a{text-transform:none;letter-spacing:0;font-weight:500;font-family:var(--sans)}
+.m .k,.sc-grid .k,.flabel,.lg-hdr,.defs dt,.legend{font-size:12px}.chip{font-size:12px;border-radius:6px}
+.dk .coach{background:rgba(255,255,255,.7)}
+.dk .eb,.dk .m .k{color:var(--ink3)}
 .mtg span,.mright{font-family:var(--sans)}
+header,.top{background:rgba(255,255,255,.75);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 </style>
 
 </head>
@@ -855,7 +856,9 @@ function mealDayType(date){
   const km=d?+d.km||0:0, kind=d?d.kind:"rest", extra=d&&/strength|gym/i.test(d.extra||"");
   let t="rest";
   if(kind==="long"||km>=18)t="long";else if(d&&HARD.includes(kind))t="key";else if(km>0||extra||lifted||acts.length||(d&&kind!=="rest"))t="train";
-  return {t,d,km,kind};
+  const runKm=acts.filter(r=>isRun(r)).reduce((a,r)=>a+(+r.km||0),0);
+  const otherMin=acts.filter(r=>!isRun(r)&&!/weight/i.test(r.type||"")).reduce((a,r)=>a+(+r.sec||0)/60,0);
+  return {t,d,km,kind,runKm,otherMin,gym:lifted||extra||acts.some(r=>/weight/i.test(r.type||""))};
 }
 function weightTrend(){
   const ws=Object.values(S.log).filter(l=>+l.weight>0).sort((a,b)=>a.date.localeCompare(b.date));
@@ -865,10 +868,13 @@ function weightTrend(){
   return {now,prev,last,rate:now&&prev?now-prev:null,n:ws.length,today:S.log[TODAY]&&S.log[TODAY].weight};
 }
 function cutAdj(){const t=weightTrend();if(t.rate==null)return 0;if(t.rate<-0.8)return 150;if(t.rate>-0.15)return -150;return 0;}
-function mealTargets(t){
+function mealTargets(t,info){
   const tr=weightTrend(), bw=tr.now||tr.last||91;
   const p=Math.max(180,Math.min(210,Math.round(bw*2.2/5)*5));
-  const base={rest:2100,train:2350,key:2500,long:2700}[t]+cutAdj();
+  // Base for a cut at rest, then eat back about 60% of what training burns (about 1 kcal per kg per km running), so sessions stay fuelled.
+  const km=info?Math.max(info.km||0,info.runKm||0):0;
+  const burn=km*bw*1.0*0.6+(info&&info.gym?150:0)+(info?Math.min(600,(info.otherMin||0)*7*0.6):0)+(t==="key"?100:0);
+  const base=Math.round((2050+burn)/50)*50+cutAdj();
   const f=t==="rest"?60:65, c=Math.max(100,Math.round((base-p*4-f*9)/4/5)*5);
   return {kcal:base,p,c,f,fl:t==="long"?"3 L+ and electrolytes":t==="rest"?"2.5 to 3 L":"3 L+"};
 }
@@ -885,7 +891,7 @@ function mealDay(date){
   const withAlt=(x,on)=>{if(on&&x.alt)return {...x,d:x.d,altT:x.alt.t,m:[x.m[0]+x.alt.m[0],x.m[1]+x.alt.m[1],x.m[2]+x.alt.m[2]],i:(x.i||[]).concat(x.alt.i||[])};return x;};
   if(t==="long")items.push({slot:"Before the long run",n:"Banana and coffee",d:"30 to 60 min before. Electrolytes if it's warm.",m:[1,27,0],i:[["Fruit","Bananas",1,""]]});
   items.push({slot:t==="long"?"Breakfast, after the run":"Breakfast",swap:"b",key:bk,...withAlt(MB[bk],t==="key"||t==="long")});
-  items.push({slot:"Coffee",n:"2 to 3 coffees",d:"Long blacks, or skim or lite milk lattes. Last one by 2 pm.",m:[t==="rest"?8:8,12,4],note:1});
+  items.push({slot:"Coffee",n:"Coffee",d:"Long blacks are free. Milk coffees add up on a cut: skim or lite milk, and count them.",m:[8,12,4],note:1});
   let L;
   if(lk==="left"){const pd=MD[pdk];L={...ML.left,n:"Leftover "+pd.n.toLowerCase(),d:"From last night's double batch.",m:withAlt(pd,tr).m.slice(),i:[],key:"left"};}
   else L={key:lk,...withAlt(ML[lk],tr)};
@@ -893,11 +899,13 @@ function mealDay(date){
   const sk=md.s||pickKey(MS_K,date+"s");
   items.push({slot:"Afternoon",swap:"s",key:sk,...MS[sk]});
   if(tr&&t!=="long")items.push({slot:"Before training",n:"Banana or coffee",d:"Banana 30 to 60 min before a hard session. Easy runs: coffee is enough.",m:[1,t==="key"?27:0,0],i:t==="key"?[["Fruit","Bananas",1,""]]:[]});
-  const treat=t==="long"&&dow===6&&!md.d;
+  const treat=false;
+  if(t==="long"&&Math.max(info.km,info.runKm)>=16){const lk=Math.max(info.km,info.runKm),ng=Math.max(1,Math.round(Math.max(0,lk*5.3-45)/35));items.splice(items.findIndex(x=>x.slot==="Breakfast, after the run"),0,{slot:"During the run",n:ng+" gel"+(ng>1?"s":"")+" and water",d:"From 45 min, one every 30 to 40 min. Practise what you'll race with. Fuel on the run is training, so it isn't counted against today's numbers.",m:[0,0,0],i:[["Other","Gels",ng,""]]});}
+  if(t==="key")items.push({slot:"Within an hour after",n:"Protein and carbs",d:"Shake and a banana, or bring lunch forward. Recovery first on hard days.",m:[0,0,0],note:1});
   const nextLeft=(()=>{const nd=addD(date,1),nm=mealsDoc(nd),ndow=new Date(nd+"T12:00").getDay();return nm.l?nm.l==="left":(ndow>=1&&ndow<=5&&dateHash(nd+"l")%3===0);})();
   if(treat)items.push({slot:"Dinner",swap:"d",key:"treat",n:"Treat meal, kept sensible",w:"Your pick",d:"After the long run. Aim for about 900 kcal: a burger without the chips, or two slices of pizza and a salad. Protein first.",m:[45,90,35],i:[]});
   else{const D=withAlt(MD[dk],tr);items.push({slot:"Dinner",swap:"d",key:dk,...D,cookExtra:nextLeft&&!MD[dk].f,i:(D.i||[]).map(x=>nextLeft&&!MD[dk].f?[x[0],x[1],x[2]*2,x[3]]:x)});}
-  const tg=mealTargets(t);
+  const tg=mealTargets(t,info);
   let tot=items.reduce((a,x)=>[a[0]+x.m[0],a[1]+x.m[1],a[2]+x.m[2]],[0,0,0]);
   if(tot[0]<tg.p-12){const add={slot:"Evening",n:"Protein top-up",d:"A scoop of whey in water, or a Chobani Fit tub",m:[25,4,1],i:[["Other","Whey protein",1,"scoop"]]};items.push(add);tot=[tot[0]+25,tot[1]+4,tot[2]+1];}
   if((t==="key"||t==="long")&&tot[1]<tg.c-50){const g=Math.min(80,Math.round((tg.c-tot[1])/10)*10);items.push({slot:"Around the session",n:"Extra carbs, about "+g+" g",d:"Rice cakes with honey, a second banana, or a bigger serve of rice with dinner. Carbs go where the work is.",m:[2,g,1],i:[["Other","Rice cakes",4,""]]});tot=[tot[0]+2,tot[1]+g,tot[2]+1];}
@@ -940,7 +948,7 @@ function swapOptions(slot,t){
 function vMeals(){
   const off=UI.mealWk||0, mon=addD(monOf(TODAY),7*off), days=mealWeek(mon), tw=weightTrend(), goal=+S.settings.weightGoal||87;
   const nTr=days.filter(d=>d.info.t!=="rest").length;
-  let h=head("Fuel","Meals","Built for a cut: high protein, calories down, carbs where the training is. Melbourne staples from Woolies and Coles, with quick takeaway options that still fit.");
+  let h=head("Fuel","Meals","Built for you to drop body fat without short-changing your running: high protein every day, calories set from each day's training, carbs where the work is.");
   // cut card
   const adj=cutAdj();
   h+='<section class="card pad" style="margin-bottom:14px"><div class="ch"><div class="eb acc">The cut</div><span class="sub mono">goal '+goal+' kg</span></div>'+
@@ -968,7 +976,7 @@ function vMeals(){
   h+='<section class="card pad" style="margin-top:14px"><div class="ch"><div class="eb acc">Woolies / Coles list</div><span class="sub mono">'+fD(mon,true)+' week</span></div>'+
     Object.entries(sl).filter(([,v])=>v.length).map(([g,v])=>'<div class="eb" style="margin:14px 0 4px">'+g+'</div>'+v.map(o=>{const k=g+o.n;return '<label class="shopi"><input type="checkbox" data-shop="'+esc(k)+'" data-shopwk="'+mon+'"'+(ticks[k]?' checked':'')+'><span>'+esc(o.n)+'</span><span class="mono sub">'+esc(o.label)+'</span></label>';}).join("")).join("")+
     '<div class="sub" style="margin-top:12px">Takeaway days are not on the list. Sunday prep: cook 1 kg chicken breast, boil 6 eggs, portion the mince.</div></section>';
-  h+='<section class="card pad" style="margin-top:14px"><div class="eb acc">Cut rules</div><div class="prose" style="margin-top:6px"><p>Protein at every meal, about 200 g a day. It keeps the muscle while the weight comes off.</p><p>Carbs follow the training: most on key session and long run days, least on rest days. Never cut carbs before a quality session or long run.</p><p>Drinks are the easy win. Skim or lite milk in coffee, no juice, alcohol counts.</p><p>Takeaway is fine when you order it the way it says here. Skip the chips, sauces on the side.</p></div></section>';
+  h+='<section class="card pad" style="margin-top:14px"><div class="eb acc">Cut rules</div><div class="prose" style="margin-top:6px"><p>Protein at every meal, about 200 g a day. It keeps the muscle while the weight comes off.</p><p>Calories follow the training. Each day starts from a cut baseline and eats back about 60% of what the day\'s running, gym and other sport burn, so hard days and long runs are properly fuelled and rest days do the fat loss.</p><p>Never cut carbs before a quality session or long run, and fuel long runs with gels. That\'s training, not the cut.</p><p>Drinks are the easy win. Skim or lite milk in coffee, no juice, alcohol counts.</p><p>Takeaway is fine when you order it the way it says here. Skip the chips, sauces on the side.</p></div></section>';
   return h;
 }
 function bindMeals(r){
