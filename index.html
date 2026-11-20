@@ -476,6 +476,7 @@ input,textarea,select{border-radius:8px!important;font-family:var(--sans);backgr
 .mtg span,.mright{font-family:var(--sans)}
 header,.top{background:rgba(255,255,255,.75);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 /* Run detail */
+.rd-map .leaflet-container{background:transparent}
 .rd-map{height:240px;border-radius:14px;overflow:hidden;background:var(--sunken);margin-top:12px;position:relative;z-index:0}
 .rd-map .rd-nomap{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink3);font-size:13px;text-align:center;padding:20px}
 .rd-big{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:16px}
@@ -1746,13 +1747,26 @@ function openRun(id){
       if(window._rdDot&&r._ll&&r._ll.length){const ll=r._ll[Math.min(r._ll.length-1,Math.round(i/(n-1)*(r._ll.length-1)))];window._rdDot.setLatLng(ll);}};
     document.querySelectorAll("#sheetRoot .rd-chart svg[id]").forEach(svg=>{const mv=e=>{const b=svg.getBoundingClientRect();const f=Math.max(0,Math.min(1,(e.clientX-b.left)/b.width));const target=f*xm;let i=0;while(i<n-1&&st.d[i]<target)i++;show(i);};
       svg.addEventListener("pointermove",mv);svg.addEventListener("pointerdown",mv);});}
-  if(r.poly){const ll=decPoly(r.poly);r._ll=ll;loadLeaflet().then(()=>{const el=$("#rdMap");if(!el||!ll.length)return;
-    const m=L.map(el,{zoomControl:false,attributionControl:true,scrollWheelZoom:false});m.attributionControl.setPrefix(false);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:19,attribution:'© OpenStreetMap, © CARTO'}).addTo(m);
-    const pl=L.polyline(ll,{color:"#F6009D",weight:4,opacity:.9}).addTo(m);m.fitBounds(pl.getBounds(),{padding:[18,18]});
+  if(r.poly){const ll=decPoly(r.poly);r._ll=ll;const box=$("#rdMap");
+    /* Always draw the route as a simple picture first, so there is something even with no map tiles. */
+    if(box&&ll.length>1){const la=ll.map(p=>p[0]),lo=ll.map(p=>p[1]);const mnA=Math.min(...la),mxA=Math.max(...la),mnO=Math.min(...lo),mxO=Math.max(...lo);
+      const k=Math.cos(((mnA+mxA)/2)*Math.PI/180),W=600,H=240,pad=20,sx=(mxO-mnO)*k||1e-6,sy=(mxA-mnA)||1e-6,sc=Math.min((W-2*pad)/sx,(H-2*pad)/sy);
+      const ox=(W-sx*sc)/2,oy=(H-sy*sc)/2,P=p=>[(ox+(p[1]-mnO)*k*sc).toFixed(1),(oy+(mxA-p[0])*sc).toFixed(1)];
+      const d=ll.map((p,i)=>(i?"L":"M")+P(p).join(",")).join(""),s0=P(ll[0]),s1=P(ll[ll.length-1]);
+      box.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%"><path d="'+d+'" fill="none" stroke="#F6009D" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="'+s0[0]+'" cy="'+s0[1]+'" r="6" fill="#3FB39C" stroke="#fff" stroke-width="2"/><circle cx="'+s1[0]+'" cy="'+s1[1]+'" r="6" fill="#202020" stroke="#fff" stroke-width="2"/></svg>';}
+    loadLeaflet().then(()=>{const el=$("#rdMap");if(!el||!ll.length)return;
+    const holder=document.createElement("div");holder.style.cssText="position:absolute;inset:0";el.appendChild(holder);
+    const m=L.map(holder,{zoomControl:false,attributionControl:true,scrollWheelZoom:false});m.attributionControl.setPrefix(false);
+    const SRC=[["https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{subdomains:"abcd",maxZoom:19,attribution:"© OpenStreetMap, © CARTO"}],
+      ["https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}],
+      ["https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"© Esri"}]];
+    let si=0,bad=0,good=0,layer=null;const use=i=>{if(layer)m.removeLayer(layer);bad=0;good=0;layer=L.tileLayer(SRC[i][0],SRC[i][1]);
+      layer.on("tileerror",()=>{bad++;if(!good&&bad>=3&&si<SRC.length-1){si++;use(si);}});layer.on("tileload",()=>{good++;});layer.addTo(m);};
+    use(0);
+    const pl=L.polyline(ll,{color:"#F6009D",weight:4,opacity:.9}).addTo(m);const fit=()=>{m.invalidateSize();m.fitBounds(pl.getBounds(),{padding:[18,18]});};fit();
     L.circleMarker(ll[0],{radius:5,color:"#fff",weight:2,fillColor:"#3FB39C",fillOpacity:1}).addTo(m);L.circleMarker(ll[ll.length-1],{radius:5,color:"#fff",weight:2,fillColor:"#202020",fillOpacity:1}).addTo(m);
     window._rdDot=L.circleMarker(ll[0],{radius:6,color:"#fff",weight:2,fillColor:"#0588F0",fillOpacity:1}).addTo(m);
-    setTimeout(()=>m.invalidateSize(),200);}).catch(()=>{const el=$("#rdMap");if(el)el.innerHTML='<div class="rd-nomap">Map could not load. Check your connection.</div>';});}
+    {const sv=el.querySelector(":scope>svg");if(sv)sv.remove();}[150,400,900].forEach(t=>setTimeout(fit,t));}).catch(()=>{});}
 }
 
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-runopen]");if(b){e.preventDefault();openRun(b.dataset.runopen);}});
